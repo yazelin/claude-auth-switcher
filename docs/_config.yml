@@ -1,0 +1,5 @@
+title: Claude Auth Switcher
+description: Manage multiple Claude Code subscription accounts on one machine — Linux and Windows
+remote_theme: pages-themes/cayman@v0.2.0
+plugins:
+  - jekyll-remote-theme

@@ -1,0 +1,213 @@
+#!/usr/bin/env bash
+set -euo pipefail
+_here="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$_here/lib/core.sh"
+# Optional override hook for tests (lets a test inject a fake cl_http_get_usage).
+[ -n "${CL_OVERRIDE:-}" ] && [ -f "${CL_OVERRIDE:-}" ] && source "$CL_OVERRIDE"
+
+die() { printf 'cl: %s\n' "$*" >&2; exit 1; }
+
+cl_usage_help() {
+  cat <<'EOF'
+usage:
+  cl import <name>       Save current ~/.claude account as a profile
+  cl use <name>          Switch active account (merges only claudeAiOauth)
+  cl switch              Interactive switcher
+  cl list                List profiles, active marker, cached usage
+  cl usage [name|--all]  Fetch live usage (default: active)
+  cl current             Print active profile
+  cl remove <name>       Delete a profile
+  cl export <a.tgz>      Back up all profiles
+  cl restore <a.tgz>     Restore profiles from archive
+  cl doctor              Show paths, claude process state, profile summary
+  cl help                Show this help
+
+env: CL_PROFILES_DIR (default ~/.claude_auth_profiles), CL_CRED (default ~/.claude/.credentials.json)
+EOF
+}
+
+cmd_current() {
+  if [ -f "$CL_PROFILES_DIR/current" ]; then cat "$CL_PROFILES_DIR/current"; else echo "none"; fi
+}
+
+cmd_import() { # name
+  local name="${1:-}"; [ -n "$name" ] || die "usage: cl import <name>"
+  [ -f "$CL_CRED" ] || die "no credentials at $CL_CRED — log in with Claude Code first"
+  local oauth; oauth="$(cl_read_oauth "$CL_CRED")"
+  [ "$oauth" != "null" ] || die "no claudeAiOauth block in $CL_CRED"
+  umask 077
+  echo "$oauth" | jq . > "$CL_PROFILES_DIR/$name.json"
+  chmod 700 "$CL_PROFILES_DIR" 2>/dev/null || true
+  echo "$name" > "$CL_PROFILES_DIR/current"
+  echo "imported '$name'"
+}
+
+cl_lock()   { mkdir "$CL_PROFILES_DIR/.lock" 2>/dev/null || die "another cl operation is in progress (stale lock? rm -rf $CL_PROFILES_DIR/.lock)"; }
+cl_unlock() { rmdir "$CL_PROFILES_DIR/.lock" 2>/dev/null || true; }
+
+cmd_use() { # name [--force|-y]
+  local name="" force=0 a
+  for a in "$@"; do
+    case "$a" in
+      --force|-y|--yes) force=1 ;;
+      -*) die "unknown flag $a" ;;
+      *) name="$a" ;;
+    esac
+  done
+  [ -n "$name" ] || die "usage: cl use <name> [--force]"
+  local pf="$CL_PROFILES_DIR/$name.json"
+  [ -f "$pf" ] || die "no such profile: $name"
+  [ -f "$CL_CRED" ] || die "no credentials at $CL_CRED — log in with Claude Code first"
+
+  # Guard: refuse to clobber an unsaved current account.
+  local cur_rt owner
+  cur_rt="$(cl_read_oauth "$CL_CRED" | jq -r '.refreshToken // empty')"
+  owner="$(cl_find_profile_by_refresh "$CL_PROFILES_DIR" "$cur_rt")"
+  if [ -z "$owner" ] && [ "$force" -ne 1 ]; then
+    die "current account is not saved as a profile — 'cl import <name>' first, or pass --force to overwrite"
+  fi
+
+  cl_lock; trap cl_unlock EXIT
+  local oauth; oauth="$(cat "$pf")"
+  if cl_token_expired "$oauth"; then
+    local refreshed
+    if refreshed="$(cl_refresh "$oauth")"; then
+      oauth="$refreshed"; echo "$oauth" | jq . > "$pf"
+    else
+      cl_unlock; trap - EXIT
+      die "token refresh failed for '$name' — re-login in Claude Code on that account then 'cl import $name'"
+    fi
+  fi
+  cl_merge_oauth "$CL_CRED" "$(echo "$oauth" | jq -c .)"
+  echo "$name" > "$CL_PROFILES_DIR/current"
+  cl_unlock; trap - EXIT
+  echo "switched to '$name'"
+}
+
+cmd_list() {
+  local cur="" f name
+  [ -f "$CL_PROFILES_DIR/current" ] && cur="$(cat "$CL_PROFILES_DIR/current")"
+  local found=0
+  for f in "$CL_PROFILES_DIR"/*.json; do
+    [ -e "$f" ] || continue
+    case "$f" in *.usage.json) continue;; esac
+    found=1
+    name="$(basename "$f" .json)"
+    local mark="  "; [ "$name" = "$cur" ] && mark="* "
+    local sub; sub="$(jq -r '.subscriptionType // "?"' "$f")"
+    local uf="$CL_PROFILES_DIR/$name.usage.json" extra=""
+    if [ -f "$uf" ]; then
+      extra="$(jq -r '"5h=" + ((.five_hour.utilization|tostring)//"?") + "% wk=" + ((.seven_day.utilization|tostring)//"?") + "%"' "$uf" 2>/dev/null || true)"
+    fi
+    printf '%s%-16s %-6s %s\n' "$mark" "$name" "$sub" "$extra"
+  done
+  [ "$found" -eq 1 ] || echo "no profiles — 'cl import <name>' to add one"
+}
+
+_cl_usage_one() { # name
+  local name="$1"
+  local pf="$CL_PROFILES_DIR/$name.json"
+  [ -f "$pf" ] || { echo "  ($name: no such profile)"; return 0; }
+  local oauth acc usage
+  oauth="$(cat "$pf")"
+  if cl_token_expired "$oauth"; then
+    local r; if r="$(cl_refresh "$oauth")"; then oauth="$r"; echo "$oauth" | jq . > "$pf"; fi
+  fi
+  acc="$(echo "$oauth" | jq -r '.accessToken')"
+  usage="$(cl_fetch_usage "$acc")"
+  if echo "$usage" | jq -e '.five_hour' >/dev/null 2>&1; then
+    echo "$usage" | jq . > "$CL_PROFILES_DIR/$name.usage.json"
+    echo "$name:"
+    cl_format_usage "$usage"
+  else
+    echo "$name: usage query failed: $usage"
+  fi
+}
+
+cmd_usage() { # [name|--all]
+  local arg="${1:-}"
+  if [ "$arg" = "--all" ]; then
+    local f
+    for f in "$CL_PROFILES_DIR"/*.json; do
+      [ -e "$f" ] || continue; case "$f" in *.usage.json) continue;; esac
+      _cl_usage_one "$(basename "$f" .json)"
+    done
+  elif [ -n "$arg" ]; then
+    _cl_usage_one "$arg"
+  else
+    local cur; cur="$(cmd_current)"; [ "$cur" = "none" ] && die "no active profile"
+    _cl_usage_one "$cur"
+  fi
+}
+
+cmd_remove() { # name
+  local name="${1:-}"; [ -n "$name" ] || die "usage: cl remove <name>"
+  local pf="$CL_PROFILES_DIR/$name.json"
+  [ -f "$pf" ] || die "no such profile: $name"
+  rm -f "$pf" "$CL_PROFILES_DIR/$name.usage.json"
+  [ "$(cmd_current)" = "$name" ] && rm -f "$CL_PROFILES_DIR/current"
+  echo "removed '$name'"
+}
+
+cl_claude_running() { pgrep -x claude >/dev/null 2>&1 || pgrep -f '/claude( |$)' >/dev/null 2>&1; }
+
+cmd_switch() {
+  local names=() f
+  for f in "$CL_PROFILES_DIR"/*.json; do
+    [ -e "$f" ] || continue; case "$f" in *.usage.json) continue;; esac
+    names+=("$(basename "$f" .json)")
+  done
+  [ "${#names[@]}" -gt 0 ] || die "no profiles — 'cl import <name>' first"
+  if cl_claude_running; then echo "warning: a claude process is running; switching changes its token on next API call." >&2; fi
+  echo "select a profile:"
+  local i=1 n
+  for n in "${names[@]}"; do printf '  %d) %s\n' "$i" "$n"; i=$((i+1)); done
+  printf 'choice: '; local sel; read -r sel
+  { [ "$sel" -ge 1 ] && [ "$sel" -le "${#names[@]}" ]; } 2>/dev/null || die "invalid choice"
+  cmd_use "${names[$((sel-1))]}"
+}
+
+cmd_export() { # archive.tgz
+  local arc="${1:-}"; [ -n "$arc" ] || die "usage: cl export <archive.tgz>"
+  ( cd "$CL_PROFILES_DIR" && tar czf "$arc" --exclude='.lock' . )
+  echo "exported profiles to $arc"
+}
+cmd_restore() { # archive.tgz
+  local arc="${1:-}"; [ -n "$arc" ] || die "usage: cl restore <archive.tgz>"
+  [ -f "$arc" ] || die "no such archive: $arc"
+  mkdir -p "$CL_PROFILES_DIR"; chmod 700 "$CL_PROFILES_DIR" 2>/dev/null || true
+  tar xzf "$arc" -C "$CL_PROFILES_DIR"
+  echo "restored profiles from $arc"
+}
+
+cmd_doctor() {
+  echo "claude-auth-switcher doctor"
+  echo "  profiles dir : $CL_PROFILES_DIR"
+  echo "  credentials  : $CL_CRED $( [ -f "$CL_CRED" ] && echo '(present)' || echo '(MISSING)')"
+  echo "  jq           : $(command -v jq || echo 'MISSING')"
+  echo "  curl         : $(command -v curl || echo 'MISSING')"
+  echo "  claude proc  : $(cl_claude_running && echo running || echo 'not running')"
+  echo "  active       : $(cmd_current)"
+  echo "  profiles     :"
+  cmd_list | sed 's/^/    /'
+}
+
+main() {
+  mkdir -p "$CL_PROFILES_DIR"
+  local cmd="${1:-help}"; shift || true
+  case "$cmd" in
+    help|-h|--help) cl_usage_help ;;
+    import)         cmd_import "$@" ;;
+    use)            cmd_use "$@" ;;
+    switch)         cmd_switch ;;
+    list|ls)        cmd_list ;;
+    usage)          cmd_usage "$@" ;;
+    current)        cmd_current ;;
+    remove|rm)      cmd_remove "$@" ;;
+    export)         cmd_export "$@" ;;
+    restore)        cmd_restore "$@" ;;
+    doctor)         cmd_doctor ;;
+    *)              cl_usage_help ;;
+  esac
+}
+main "$@"
