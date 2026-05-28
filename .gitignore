@@ -1,0 +1,4 @@
+# Auth profiles & exports — never commit secrets
+*.tgz
+.claude_auth_profiles/
+*.usage.json
