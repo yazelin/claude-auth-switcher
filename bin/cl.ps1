@@ -171,7 +171,7 @@ function Cmd-List {
 
 function Usage-One([string]$name) {
   $pf = Profile-Path $name
-  if (-not (Test-Path $pf)) { "  ($name: no such profile)"; return }
+  if (-not (Test-Path $pf)) { "  (${name}: no such profile)"; return }
   $oauth = Get-Content $pf -Raw | ConvertFrom-Json
   if (Token-Expired $oauth) {
     $r = Refresh-Oauth $oauth
