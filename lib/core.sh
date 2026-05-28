@@ -72,9 +72,9 @@ cl_format_usage() { # usage_json
     rs="$(echo "$usage" | jq -r --arg k "$2" '.[$k].resets_at // empty')"
     if [ -n "$rs" ] && [ "$rs" != "null" ]; then
       rs="$(date -d "$rs" '+%m/%d %H:%M' 2>/dev/null || echo "$rs")"
-      printf '  %-14s %5s%%   reset %s\n' "$1" "$u" "$rs"
+      printf '  %-14s %5s%% used   reset %s\n' "$1" "$u" "$rs"
     else
-      printf '  %-14s %5s%%\n' "$1" "$u"
+      printf '  %-14s %5s%% used\n' "$1" "$u"
     fi
   }
   _cl_usage_row "5h"            five_hour

@@ -78,7 +78,7 @@ function Format-Usage($usage) {
     $b = $usage.($row[1])
     if ($null -ne $b -and $null -ne $b.utilization) {
       $reset = if ($b.resets_at) { ([datetime]$b.resets_at).ToString('MM/dd HH:mm') } else { '' }
-      '{0,-14} {1,5}%   {2}' -f $row[0], $b.utilization, ($(if ($reset) { "reset $reset" } else { '' }))
+      '{0,-14} {1,5}% used   {2}' -f $row[0], $b.utilization, ($(if ($reset) { "reset $reset" } else { '' }))
     }
   }
 }
