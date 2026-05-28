@@ -10,6 +10,7 @@ die() { printf 'cl: %s\n' "$*" >&2; exit 1; }
 cl_usage_help() {
   cat <<'EOF'
 usage:
+  cl login <name>        Add a new account (opens browser OAuth)
   cl import <name>       Save current ~/.claude account as a profile
   cl use <name>          Switch active account (merges only claudeAiOauth)
   cl switch              Interactive switcher
@@ -28,6 +29,32 @@ EOF
 
 cmd_current() {
   if [ -f "$CL_PROFILES_DIR/current" ]; then cat "$CL_PROFILES_DIR/current"; else echo "none"; fi
+}
+
+cmd_login() { # name
+  local name="${1:-}"; [ -n "$name" ] || die "usage: cl login <name>"
+  [ -f "$CL_CRED" ] || die "no credentials at $CL_CRED — run 'claude' first to initialise Claude Code"
+
+  local backup="${CL_CRED}.cl_bak"
+  cp "$CL_CRED" "$backup"
+  rm -f "$CL_CRED"
+
+  local ok=0
+  if claude auth login; then
+    if [ -f "$CL_CRED" ]; then
+      local oauth; oauth="$(cl_read_oauth "$CL_CRED")"
+      if [ -n "$oauth" ] && [ "$oauth" != "null" ]; then
+        mkdir -p "$CL_PROFILES_DIR"; chmod 700 "$CL_PROFILES_DIR" 2>/dev/null || true
+        umask 077; echo "$oauth" | jq . > "$CL_PROFILES_DIR/$name.json"
+        ok=1
+      fi
+    fi
+  fi
+
+  cp "$backup" "$CL_CRED"; rm -f "$backup"
+
+  [ "$ok" -eq 1 ] && echo "saved as '$name' — run 'cl use $name' to switch" \
+                  || die "login did not complete or credentials were not written"
 }
 
 cmd_import() { # name
@@ -197,6 +224,7 @@ main() {
   local cmd="${1:-help}"; shift || true
   case "$cmd" in
     help|-h|--help) cl_usage_help ;;
+    login)          cmd_login "$@" ;;
     import)         cmd_import "$@" ;;
     use)            cmd_use "$@" ;;
     switch)         cmd_switch ;;

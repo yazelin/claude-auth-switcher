@@ -94,6 +94,7 @@ function Find-ProfileByRefresh([string]$want) {
 function Cmd-Help {
 @'
 usage:
+  cl login <name>        Add a new account (opens browser OAuth)
   cl import <name>       Save current ~/.claude account as a profile
   cl use <name>          Switch active account (merges only claudeAiOauth)
   cl switch              Interactive switcher
@@ -108,6 +109,36 @@ usage:
 
 env: CL_PROFILES_DIR (default ~\.claude_auth_profiles), CL_CRED (default ~\.claude\.credentials.json)
 '@
+}
+
+function Cmd-Login([string]$name) {
+  if (-not $name) { Die 'usage: cl login <name>' }
+  if (-not (Test-Path $CL_CRED)) { Die "no credentials at $CL_CRED — run claude first to initialise Claude Code" }
+
+  $backup = "$CL_CRED.cl_bak"
+  Copy-Item $CL_CRED $backup -Force
+  Remove-Item $CL_CRED -Force
+
+  $ok = $false
+  try {
+    & claude auth login
+    if (Test-Path $CL_CRED) {
+      $cred = Get-Content $CL_CRED -Raw | ConvertFrom-Json
+      if ($cred.claudeAiOauth) {
+        Ensure-Dir
+        $cred.claudeAiOauth | ConvertTo-Json -Depth 25 | Set-Content (Profile-Path $name) -Encoding utf8
+        $ok = $true
+      }
+    }
+  } finally {
+    if (Test-Path $backup) {
+      Copy-Item $backup $CL_CRED -Force
+      Remove-Item $backup -Force
+    }
+  }
+
+  if ($ok) { "saved as '$name' — run 'cl use $name' to switch" }
+  else { Die 'login did not complete or credentials were not written' }
 }
 
 function Cmd-Import([string]$name) {
@@ -251,6 +282,7 @@ switch ($Command) {
   'help'    { Cmd-Help }
   '-h'      { Cmd-Help }
   '--help'  { Cmd-Help }
+  'login'   { Cmd-Login ($Rest[0]) }
   'import'  { Cmd-Import ($Rest[0]) }
   'use'     { Cmd-Use $Rest }
   'switch'  { Cmd-Switch }
