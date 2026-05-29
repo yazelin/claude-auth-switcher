@@ -3,6 +3,7 @@
 # cl_http_* wrappers so tests can override them.
 
 : "${CL_CRED:=$HOME/.claude/.credentials.json}"
+: "${CL_ACCOUNT:=$HOME/.claude.json}"
 : "${CL_PROFILES_DIR:=$HOME/.claude_auth_profiles}"
 : "${CL_CLIENT_ID:=9d1c250a-e61b-44d9-88ed-5944d1962f5e}"
 : "${CL_TOKEN_URL:=https://platform.claude.com/v1/oauth/token}"
@@ -23,6 +24,31 @@ cl_merge_oauth() { # cred_file, oauth_json
   mv "$tmp" "$cred"
   chmod 600 "$cred" 2>/dev/null || true
 }
+
+# --- Account identity (~/.claude.json -> .oauthAccount) -------------------------------
+# Claude Code splits a logged-in account across TWO files: the token lives in
+# .credentials.json (.claudeAiOauth) while the subscription identity (account
+# UUID, org, billing tier) lives in ~/.claude.json (.oauthAccount). Switching
+# only the token leaves a mismatch that drops Claude Code to API billing, so we
+# must move .oauthAccount too.
+
+# Print the compact .oauthAccount object, or empty if absent.
+cl_read_account() { # account_file
+  [ -f "$1" ] || return 0
+  jq -c '.oauthAccount // empty' "$1" 2>/dev/null || true
+}
+
+# Replace ONLY .oauthAccount in ~/.claude.json, preserving every other key
+# (projects, history, ...). Writes atomically.
+cl_write_account() { # account_file, oauth_account_json
+  local file="$1" acct="$2" tmp
+  [ -n "$acct" ] && [ "$acct" != "null" ] || return 0
+  [ -f "$file" ] || { echo "cl: no $file to update; run Claude Code once first" >&2; return 0; }
+  tmp="$(mktemp)"
+  jq --argjson a "$acct" '.oauthAccount = $a' "$file" > "$tmp" || { rm -f "$tmp"; return 1; }
+  mv "$tmp" "$file"
+}
+# -------------------------------------------------------------------------------------
 
 # Return 0 (true) if the oauth's token is expired or within the refresh buffer.
 cl_token_expired() { # oauth_json
@@ -88,7 +114,7 @@ cl_find_profile_by_refresh() { # profiles_dir, refresh_token
   local dir="$1" want="$2" f name rt
   for f in "$dir"/*.json; do
     [ -e "$f" ] || continue
-    case "$f" in *.usage.json) continue;; esac
+    case "$f" in *.usage.json|*.account.json) continue;; esac
     rt="$(jq -r '.refreshToken // empty' "$f" 2>/dev/null)"
     if [ "$rt" = "$want" ]; then
       name="$(basename "$f" .json)"; echo "$name"; return 0
