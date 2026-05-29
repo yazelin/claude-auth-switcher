@@ -1,6 +1,12 @@
 # Sourced by every test file (via run.sh). Provides assertions + a temp fixture.
 set -u
 
+# SAFETY: `cl use` / `cl switch` kill all running `claude` processes (except their
+# own ancestor chain) before switching. Tests invoke the real `cl use`, so without
+# this guard a test run would kill the developer's live claude sessions. CL_NO_KILL
+# disables that side-effect for the whole suite. Never remove this.
+export CL_NO_KILL=1
+
 # Repo root, resolved from this file's location (robust regardless of $0).
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
