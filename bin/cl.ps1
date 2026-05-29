@@ -137,7 +137,7 @@ function Cmd-Login([string]$name) {
     }
   }
 
-  if ($ok) { "saved as '$name' — run 'cl use $name' to switch" }
+  if ($ok) { "saved as '$name'; run 'cl use $name' to switch" }
   else { Die 'login did not complete or credentials were not written' }
 }
 
