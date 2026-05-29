@@ -21,7 +21,7 @@ $CL_TOKEN_URL    = if ($env:CL_TOKEN_URL)    { $env:CL_TOKEN_URL }    else { 'ht
 $CL_USAGE_URL    = if ($env:CL_USAGE_URL)    { $env:CL_USAGE_URL }    else { 'https://api.anthropic.com/api/oauth/usage' }
 $CL_REFRESH_BUFFER_MS = 60000
 
-function Die([string]$msg) { Write-Error "cl: $msg"; exit 1 }
+function Die([string]$msg) { [Console]::Error.WriteLine("cl: $msg"); exit 1 }
 function Now-Ms { [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() }
 
 function Ensure-Dir {
