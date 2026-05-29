@@ -163,11 +163,15 @@ function Cmd-Use([string[]]$argv) {
   if (-not $name) { Die 'usage: cl use <name> [--force]' }
   $pf = Profile-Path $name
   if (-not (Test-Path $pf)) { Die "no such profile: $name" }
-  $cred = Read-Cred
-  $curRt = $cred.claudeAiOauth.refreshToken
-  $owner = Find-ProfileByRefresh $curRt
-  if (-not $owner -and -not $force) {
-    Die "current account is not saved as a profile - 'cl import <name>' first, or pass --force"
+  if (Test-Path $CL_CRED) {
+    $cred = Read-Cred
+    $curRt = $cred.claudeAiOauth.refreshToken
+    $owner = Find-ProfileByRefresh $curRt
+    if (-not $owner -and -not $force) {
+      Die "current account is not saved as a profile - 'cl import <name>' first, or pass --force"
+    }
+  } else {
+    $cred = [PSCustomObject]@{}
   }
   $oauth = Get-Content $pf -Raw | ConvertFrom-Json
   if (Token-Expired $oauth) {
