@@ -1,4 +1,4 @@
-# claude-auth-switcher — Windows / PowerShell port of bin/cl.
+# claude-auth-switcher - Windows / PowerShell port of bin/cl.
 #
 # NOTE: assumes Claude Code stores credentials as a plaintext JSON file at
 # $env:USERPROFILE\.claude\.credentials.json. This must be confirmed on a real
@@ -30,7 +30,7 @@ function Ensure-Dir {
 
 # --- The two platform-specific primitives (change these if storage isn't plaintext) ---
 function Read-Cred {
-  if (-not (Test-Path $CL_CRED)) { Die "no credentials at $CL_CRED — log in with Claude Code first" }
+  if (-not (Test-Path $CL_CRED)) { Die "no credentials at $CL_CRED - log in with Claude Code first" }
   Get-Content $CL_CRED -Raw | ConvertFrom-Json
 }
 function Write-Cred($cred) {
@@ -113,7 +113,7 @@ env: CL_PROFILES_DIR (default ~\.claude_auth_profiles), CL_CRED (default ~\.clau
 
 function Cmd-Login([string]$name) {
   if (-not $name) { Die 'usage: cl login <name>' }
-  if (-not (Test-Path $CL_CRED)) { Die "no credentials at $CL_CRED — run claude first to initialise Claude Code" }
+  if (-not (Test-Path $CL_CRED)) { Die "no credentials at $CL_CRED - run claude first to initialise Claude Code" }
 
   $backup = "$CL_CRED.cl_bak"
   Copy-Item $CL_CRED $backup -Force
@@ -167,12 +167,12 @@ function Cmd-Use([string[]]$argv) {
   $curRt = $cred.claudeAiOauth.refreshToken
   $owner = Find-ProfileByRefresh $curRt
   if (-not $owner -and -not $force) {
-    Die "current account is not saved as a profile — 'cl import <name>' first, or pass --force"
+    Die "current account is not saved as a profile - 'cl import <name>' first, or pass --force"
   }
   $oauth = Get-Content $pf -Raw | ConvertFrom-Json
   if (Token-Expired $oauth) {
     $r = Refresh-Oauth $oauth
-    if ($null -eq $r) { Die "token refresh failed for '$name' — re-login in Claude Code then 'cl import $name'" }
+    if ($null -eq $r) { Die "token refresh failed for '$name' - re-login in Claude Code then 'cl import $name'" }
     $oauth = $r
     $oauth | ConvertTo-Json -Depth 25 | Set-Content $pf -Encoding utf8
   }
@@ -185,7 +185,7 @@ function Cmd-Use([string[]]$argv) {
 function Cmd-List {
   $cur = Get-Current
   $items = Get-ChildItem $CL_PROFILES_DIR -Filter '*.json' -ErrorAction SilentlyContinue | Where-Object { $_.Name -notlike '*.usage.json' }
-  if (-not $items) { 'no profiles — ''cl import <name>'' to add one'; return }
+  if (-not $items) { 'no profiles - ''cl import <name>'' to add one'; return }
   foreach ($f in $items) {
     $name = $f.BaseName
     $o = Get-Content $f.FullName -Raw | ConvertFrom-Json
@@ -244,7 +244,7 @@ function Cmd-Remove([string]$name) {
 function Cmd-Switch {
   $names = Get-ChildItem $CL_PROFILES_DIR -Filter '*.json' -ErrorAction SilentlyContinue |
     Where-Object { $_.Name -notlike '*.usage.json' } | ForEach-Object { $_.BaseName }
-  if (-not $names) { Die "no profiles — 'cl import <name>' first" }
+  if (-not $names) { Die "no profiles - 'cl import <name>' first" }
   if (Get-Process claude -ErrorAction SilentlyContinue) {
     Write-Warning 'a claude process is running; switching changes its token on next API call.'
   }
