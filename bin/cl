@@ -12,14 +12,16 @@ cl_usage_help() {
 usage:
   cl login <name>        Add a new account (opens browser OAuth)
   cl import <name>       Save current ~/.claude account as a profile
-  cl use <name>          Switch active account (merges only claudeAiOauth)
-  cl switch              Interactive switcher
+  cl use <name>          Switch active account (kills running claude first)
+  cl switch              Interactive switcher (kills running claude first)
+  cl kill                Kill all running claude processes
   cl list                List profiles, active marker, cached usage
   cl usage [name|--all]  Fetch live usage (default: active)
   cl current             Print active profile
   cl remove <name>       Delete a profile
   cl export <a.tgz>      Back up all profiles
   cl restore <a.tgz>     Restore profiles from archive
+  cl ps                  List running claude processes (excludes this session)
   cl doctor              Show paths, claude process state, profile summary
   cl help                Show this help
 
@@ -81,16 +83,17 @@ cmd_import() { # name
 cl_lock()   { mkdir "$CL_PROFILES_DIR/.lock" 2>/dev/null || die "another cl operation is in progress (stale lock? rm -rf $CL_PROFILES_DIR/.lock)"; }
 cl_unlock() { rmdir "$CL_PROFILES_DIR/.lock" 2>/dev/null || true; }
 
-cmd_use() { # name [--force|-y]
-  local name="" force=0 a
+cmd_use() { # name [--force|-y] [--no-kill]
+  local name="" force=0 no_kill="${CL_NO_KILL:-0}" a
   for a in "$@"; do
     case "$a" in
       --force|-y|--yes) force=1 ;;
+      --no-kill) no_kill=1 ;;
       -*) die "unknown flag $a" ;;
       *) name="$a" ;;
     esac
   done
-  [ -n "$name" ] || die "usage: cl use <name> [--force]"
+  [ -n "$name" ] || die "usage: cl use <name> [--force] [--no-kill]"
   local pf="$CL_PROFILES_DIR/$name.json"
   [ -f "$pf" ] || die "no such profile: $name"
   [ -f "$CL_CRED" ] || die "no credentials at $CL_CRED — log in with Claude Code first"
@@ -101,6 +104,13 @@ cmd_use() { # name [--force|-y]
   owner="$(cl_find_profile_by_refresh "$CL_PROFILES_DIR" "$cur_rt")"
   if [ -z "$owner" ] && [ "$force" -ne 1 ]; then
     die "current account is not saved as a profile — 'cl import <name>' first, or pass --force to overwrite"
+  fi
+
+  # Kill live claude first — otherwise a running session writes its cached
+  # credentials back over the switch on its next API call. (--no-kill / CL_NO_KILL=1 to skip.)
+  if [ "$no_kill" != "1" ]; then
+    local killed; killed="$(cl_kill_claude)"
+    [ "$killed" -gt 0 ] && echo "killed $killed running claude process(es) before switching"
   fi
 
   cl_lock; trap cl_unlock EXIT
@@ -190,6 +200,77 @@ cmd_remove() { # name
 
 cl_claude_running() { pgrep -x claude >/dev/null 2>&1 || pgrep -f '/claude( |$)' >/dev/null 2>&1; }
 
+# Parent-process chain from this shell ($$) up to the root. Used so a `cl`
+# invocation never kills the process tree that launched it — in a normal shell
+# there's no claude ancestor (so every claude session still dies), but if cl is
+# ever run from inside a claude session, that one session is spared.
+cl_ancestor_pids() {
+  local pid=$$ i=0 ppid
+  while [ -n "$pid" ] && [ "$pid" -gt 0 ] && [ "$i" -lt 24 ]; do
+    printf '%s\n' "$pid"
+    ppid="$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')"
+    [ -n "$ppid" ] || break
+    [ "$ppid" = "$pid" ] && break
+    pid="$ppid"; i=$((i+1))
+  done
+}
+
+# PIDs of running claude processes, excluding this command's ancestor chain and
+# the cl switcher itself. Claude Code caches its session in memory and writes
+# .credentials.json back on its next API call, so a live process silently undoes
+# a switch — kill them before switching.
+cl_claude_pids() {
+  local skip out pid command first base lower
+  skip=" $(cl_ancestor_pids | tr '\n' ' ') "
+  out="$(ps -axo pid=,command= 2>/dev/null || ps -eo pid=,args= 2>/dev/null || true)"
+  [ -n "$out" ] || return 0
+  while read -r pid command; do
+    [ -n "${pid:-}" ] || continue
+    [ -n "${command:-}" ] || continue
+    case "$skip" in *" $pid "*) continue ;; esac
+    lower="$(printf '%s' "$command" | tr '[:upper:]' '[:lower:]')"
+    case "$lower" in *claude-auth-switcher*|*"/cl ps"*|*"/cl kill"*|*"bin/cl "*) continue ;; esac
+    first="${command%% *}"; base="${first##*/}"
+    case "$base" in
+      claude|claude.exe|Claude) printf '%s\n' "$pid" ;;
+      *) case "$lower" in
+           *"/claude "*|*"/claude.exe"*|*"/.local/bin/claude"*|*"claude-code/cli"*|*"@anthropic-ai/claude-code"*)
+             printf '%s\n' "$pid" ;;
+         esac ;;
+    esac
+  done <<< "$out"
+}
+
+cl_kill_claude() {
+  local pids pid count=0; local -a arr=()
+  pids="$(cl_claude_pids || true)"
+  [ -n "$pids" ] || { printf '0\n'; return 0; }
+  while read -r pid; do [ -n "$pid" ] && arr+=("$pid"); done <<< "$pids"
+  for pid in "${arr[@]}"; do
+    if kill "$pid" 2>/dev/null; then count=$((count+1)); else printf 'cl: could not kill pid %s\n' "$pid" >&2; fi
+  done
+  if [ "$count" -gt 0 ]; then
+    sleep 0.5
+    for pid in "${arr[@]}"; do kill -0 "$pid" 2>/dev/null && kill -KILL "$pid" 2>/dev/null || true; done
+  fi
+  printf '%s\n' "$count"
+}
+
+cmd_kill() {
+  local n; n="$(cl_kill_claude)"
+  [ "$n" -eq 0 ] && echo "no claude processes to kill" || echo "killed $n claude process(es)"
+}
+
+cmd_ps() {
+  local pids pid; pids="$(cl_claude_pids || true)"
+  [ -n "$pids" ] || { echo "no claude processes (excluding this session's own tree)"; return 0; }
+  printf '%-8s %s\n' "PID" "COMMAND"
+  while read -r pid; do
+    [ -n "$pid" ] || continue
+    printf '%-8s %s\n' "$pid" "$(ps -o command= -p "$pid" 2>/dev/null | cut -c1-100)"
+  done <<< "$pids"
+}
+
 cmd_switch() {
   local names=() f
   for f in "$CL_PROFILES_DIR"/*.json; do
@@ -197,7 +278,6 @@ cmd_switch() {
     names+=("$(basename "$f" .json)")
   done
   [ "${#names[@]}" -gt 0 ] || die "no profiles — 'cl import <name>' first"
-  if cl_claude_running; then echo "warning: a claude process is running; switching changes its token on next API call." >&2; fi
   echo "select a profile:"
   local i=1 n
   for n in "${names[@]}"; do printf '  %d) %s\n' "$i" "$n"; i=$((i+1)); done
@@ -241,6 +321,8 @@ main() {
     import)         cmd_import "$@" ;;
     use)            cmd_use "$@" ;;
     switch)         cmd_switch ;;
+    kill)           cmd_kill ;;
+    ps)             cmd_ps ;;
     list|ls)        cmd_list ;;
     usage)          cmd_usage "$@" ;;
     current)        cmd_current ;;
