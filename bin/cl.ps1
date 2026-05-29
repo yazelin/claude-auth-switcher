@@ -127,6 +127,7 @@ function Cmd-Login([string]$name) {
       if ($cred.claudeAiOauth) {
         Ensure-Dir
         $cred.claudeAiOauth | ConvertTo-Json -Depth 25 | Set-Content (Profile-Path $name) -Encoding utf8
+        Set-Current $name
         $ok = $true
       }
     }

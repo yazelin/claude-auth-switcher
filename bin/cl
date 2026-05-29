@@ -46,6 +46,7 @@ cmd_login() { # name
       if [ -n "$oauth" ] && [ "$oauth" != "null" ]; then
         mkdir -p "$CL_PROFILES_DIR"; chmod 700 "$CL_PROFILES_DIR" 2>/dev/null || true
         umask 077; echo "$oauth" | jq . > "$CL_PROFILES_DIR/$name.json"
+        echo "$name" > "$CL_PROFILES_DIR/current"
         ok=1
       fi
     fi
