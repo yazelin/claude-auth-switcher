@@ -15,8 +15,8 @@ usage:
   cl use <name>          Switch active account (kills running claude first)
   cl switch              Interactive switcher (kills running claude first)
   cl kill                Kill all running claude processes
-  cl list                List profiles, active marker, cached usage
-  cl usage [name|--all]  Fetch live usage (default: active)
+  cl list                Table of profiles: active marker, email, plan, cached usage
+  cl usage [name|--all]  Live usage; --all refreshes all + shows the table; name = detail
   cl current             Print active profile
   cl remove <name>       Delete a profile
   cl export <a.tgz>      Back up all profiles
@@ -134,21 +134,21 @@ cmd_use() { # name [--force|-y] [--no-kill]
 }
 
 cmd_list() {
-  local cur="" f name
+  local cur="" f name found=0
   [ -f "$CL_PROFILES_DIR/current" ] && cur="$(cat "$CL_PROFILES_DIR/current")"
-  local found=0
   for f in "$CL_PROFILES_DIR"/*.json; do
     [ -e "$f" ] || continue
     case "$f" in *.usage.json|*.account.json) continue;; esac
-    found=1
-    name="$(basename "$f" .json)"
-    local mark="  "; [ "$name" = "$cur" ] && mark="* "
-    local sub; sub="$(jq -r '.subscriptionType // "?"' "$f")"
-    local uf="$CL_PROFILES_DIR/$name.usage.json" extra=""
-    if [ -f "$uf" ]; then
-      extra="$(jq -r '"5h=" + ((.five_hour.utilization|tostring)//"?") + "% wk=" + ((.seven_day.utilization|tostring)//"?") + "%"' "$uf" 2>/dev/null || true)"
+    if [ "$found" -eq 0 ]; then
+      printf '%-9s%-13s%-23s%-7s%s\n' "CURRENT" "PROFILE" "EMAIL" "PLAN" "USAGE"
+      found=1
     fi
-    printf '%s%-16s %-6s %s\n' "$mark" "$name" "$sub" "$extra"
+    name="$(basename "$f" .json)"
+    local mark=""; [ "$name" = "$cur" ] && mark="*"
+    local sub; sub="$(jq -r '.subscriptionType // "?"' "$f")"
+    local email; email="$(cl_profile_email "$CL_PROFILES_DIR" "$name")"
+    local usage; usage="$(cl_usage_short "$CL_PROFILES_DIR/$name.usage.json")"
+    printf '%-9s%-13s%-23s%-7s%s\n' "$mark" "$name" "$email" "$sub" "$usage"
   done
   [ "$found" -eq 1 ] || echo "no profiles — 'cl import <name>' to add one"
 }
@@ -173,14 +173,33 @@ _cl_usage_one() { # name
   fi
 }
 
+# Refresh one profile's live usage into its cache. Quiet on success; warns on failure.
+_cl_refresh_one() { # name
+  local name="$1" pf="$CL_PROFILES_DIR/$name.json" oauth acc usage
+  [ -f "$pf" ] || return 0
+  oauth="$(cat "$pf")"
+  if cl_token_expired "$oauth"; then
+    local r; if r="$(cl_refresh "$oauth")"; then oauth="$r"; echo "$oauth" | jq . > "$pf"; fi
+  fi
+  acc="$(echo "$oauth" | jq -r '.accessToken')"
+  usage="$(cl_fetch_usage "$acc")"
+  if echo "$usage" | jq -e '.five_hour' >/dev/null 2>&1; then
+    echo "$usage" | jq . > "$CL_PROFILES_DIR/$name.usage.json"
+  else
+    echo "cl: $name: usage query failed" >&2
+  fi
+}
+
 cmd_usage() { # [name|--all]
   local arg="${1:-}"
   if [ "$arg" = "--all" ]; then
+    # Refresh every profile's usage live, then show the side-by-side table.
     local f
     for f in "$CL_PROFILES_DIR"/*.json; do
       [ -e "$f" ] || continue; case "$f" in *.usage.json|*.account.json) continue;; esac
-      _cl_usage_one "$(basename "$f" .json)"
+      _cl_refresh_one "$(basename "$f" .json)"
     done
+    cmd_list
   elif [ -n "$arg" ]; then
     _cl_usage_one "$arg"
   else

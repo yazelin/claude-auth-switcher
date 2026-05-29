@@ -109,6 +109,46 @@ cl_format_usage() { # usage_json
   _cl_usage_row "weekly-sonnet" seven_day_sonnet
 }
 
+# Mask an email like ya***@example.com for display. Empty -> "-".
+cl_mask_email() { # email
+  local e="$1" lp keep
+  [ -n "$e" ] || { printf '-'; return 0; }
+  case "$e" in
+    *@*) lp="${e%%@*}"
+         if [ "${#lp}" -ge 2 ]; then keep="${lp:0:2}"; else keep="${lp:0:1}"; fi
+         printf '%s***@%s' "$keep" "${e#*@}" ;;
+    *)   printf '%s' "$e" ;;
+  esac
+}
+
+# Masked email for a profile, read from its <name>.account.json. "-" if absent.
+cl_profile_email() { # profiles_dir, name
+  local apf="$1/$2.account.json" e=""
+  [ -f "$apf" ] && e="$(jq -r '.emailAddress // empty' "$apf" 2>/dev/null || true)"
+  cl_mask_email "$e"
+}
+
+# One-line cached-usage summary from a usage file, e.g.
+# "5h 42% used @14:00 | wk 18% used". "-" if absent/empty.
+cl_usage_short() { # usage_file
+  local uf="$1" out="" u rs
+  [ -f "$uf" ] || { printf '-'; return 0; }
+  u="$(jq -r '.five_hour.utilization // empty' "$uf" 2>/dev/null || true)"
+  if [ -n "$u" ]; then
+    u="$(printf '%.0f' "$u" 2>/dev/null || printf '%s' "$u")"
+    rs="$(jq -r '.five_hour.resets_at // empty' "$uf" 2>/dev/null || true)"
+    if [ -n "$rs" ] && [ "$rs" != "null" ]; then rs="$(date -d "$rs" '+%H:%M' 2>/dev/null || true)"; else rs=""; fi
+    if [ -n "$rs" ]; then out="5h ${u}% used @${rs}"; else out="5h ${u}% used"; fi
+  fi
+  u="$(jq -r '.seven_day.utilization // empty' "$uf" 2>/dev/null || true)"
+  if [ -n "$u" ]; then
+    u="$(printf '%.0f' "$u" 2>/dev/null || printf '%s' "$u")"
+    if [ -n "$out" ]; then out="$out | wk ${u}% used"; else out="wk ${u}% used"; fi
+  fi
+  [ -n "$out" ] || out="-"
+  printf '%s' "$out"
+}
+
 # Echo the profile name whose stored refreshToken matches, or empty.
 cl_find_profile_by_refresh() { # profiles_dir, refresh_token
   local dir="$1" want="$2" f name rt

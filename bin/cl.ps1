@@ -152,6 +152,38 @@ function Format-Usage($usage) {
   }
 }
 
+function Mask-Email([string]$email) {
+  if (-not $email) { return '-' }
+  $at = $email.IndexOf('@')
+  if ($at -lt 1) { return $email }
+  $local = $email.Substring(0, $at)
+  $keep = if ($local.Length -ge 2) { $local.Substring(0, 2) } else { $local.Substring(0, 1) }
+  return ($keep + '***' + $email.Substring($at))
+}
+
+function Account-Email([string]$name) {
+  $ap = Account-Path $name
+  if (-not (Test-Path $ap)) { return $null }
+  try { (Get-Content $ap -Raw | ConvertFrom-Json).emailAddress } catch { $null }
+}
+
+# One-line cached-usage summary, e.g. "5h 42% used @14:00 | wk 18% used". '-' if none.
+function Format-UsageShort([string]$name) {
+  $uf = Usage-Path $name
+  if (-not (Test-Path $uf)) { return '-' }
+  try { $u = Get-Content $uf -Raw | ConvertFrom-Json } catch { return '-' }
+  $parts = @()
+  $fh = $u.five_hour
+  if ($fh -and $null -ne $fh.utilization) {
+    $r = if ($fh.resets_at) { ' @' + ([datetime]$fh.resets_at).ToString('HH:mm') } else { '' }
+    $parts += ('5h {0}% used{1}' -f [int][math]::Round([double]$fh.utilization), $r)
+  }
+  $wk = $u.seven_day
+  if ($wk -and $null -ne $wk.utilization) { $parts += ('wk {0}% used' -f [int][math]::Round([double]$wk.utilization)) }
+  if ($parts.Count -eq 0) { return '-' }
+  ($parts -join ' | ')
+}
+
 function Find-ProfileByRefresh([string]$want) {
   Get-ChildItem $CL_PROFILES_DIR -Filter '*.json' -ErrorAction SilentlyContinue |
     Where-Object { $_.Name -notlike '*.usage.json' -and $_.Name -notlike '*.account.json' } | ForEach-Object {
@@ -233,8 +265,8 @@ usage:
   cl use <name>          Switch active account (kills running claude first)
   cl switch              Interactive switcher (kills running claude first)
   cl kill                Kill all running claude processes
-  cl list                List profiles, active marker, cached usage
-  cl usage [name|--all]  Fetch live usage (default: active)
+  cl list                Table of profiles: active marker, email, plan, cached usage
+  cl usage [name|--all]  Live usage; --all refreshes all + shows the table; name = detail
   cl current             Print active profile
   cl remove <name>       Delete a profile
   cl export <a.zip>      Back up all profiles
@@ -347,18 +379,16 @@ function Cmd-List {
   $cur = Get-Current
   $items = Get-ChildItem $CL_PROFILES_DIR -Filter '*.json' -ErrorAction SilentlyContinue | Where-Object { $_.Name -notlike '*.usage.json' -and $_.Name -notlike '*.account.json' }
   if (-not $items) { 'no profiles - ''cl import <name>'' to add one'; return }
+  $fmt = '{0,-9}{1,-13}{2,-23}{3,-7}{4}'
+  $fmt -f 'CURRENT', 'PROFILE', 'EMAIL', 'PLAN', 'USAGE'
   foreach ($f in $items) {
     $name = $f.BaseName
     $o = Get-Content $f.FullName -Raw | ConvertFrom-Json
-    $mark = if ($name -eq $cur) { '* ' } else { '  ' }
+    $mark = if ($name -eq $cur) { '*' } else { '' }
     $sub = if ($o.subscriptionType) { $o.subscriptionType } else { '?' }
-    $extra = ''
-    $uf = Usage-Path $name
-    if (Test-Path $uf) {
-      $u = Get-Content $uf -Raw | ConvertFrom-Json
-      $extra = "5h=$($u.five_hour.utilization)% wk=$($u.seven_day.utilization)%"
-    }
-    '{0}{1,-16} {2,-6} {3}' -f $mark, $name, $sub, $extra
+    $email = Mask-Email (Account-Email $name)
+    $usage = Format-UsageShort $name
+    $fmt -f $mark, $name, $email, $sub, $usage
   }
 }
 
@@ -378,11 +408,28 @@ function Usage-One([string]$name) {
   Format-Usage $usage
 }
 
+# Refresh one profile's live usage into its cache. Quiet on success; warns on failure.
+function Refresh-UsageCache([string]$name) {
+  $pf = Profile-Path $name
+  if (-not (Test-Path $pf)) { return }
+  $oauth = Get-Content $pf -Raw | ConvertFrom-Json
+  if (Token-Expired $oauth) {
+    $r = Refresh-Oauth $oauth
+    if ($r) { $oauth = $r; Write-JsonNoBom $pf $oauth }
+  }
+  try {
+    $usage = Fetch-Usage $oauth.accessToken
+    Write-JsonNoBom (Usage-Path $name) $usage
+  } catch { Write-Warning "cl: ${name}: usage query failed: $_" }
+}
+
 function Cmd-Usage([string[]]$argv) {
   $arg = if ($argv) { $argv[0] } else { '' }
   if ($arg -eq '--all') {
+    # Refresh every profile's usage live, then show the side-by-side table.
     Get-ChildItem $CL_PROFILES_DIR -Filter '*.json' -ErrorAction SilentlyContinue |
-      Where-Object { $_.Name -notlike '*.usage.json' -and $_.Name -notlike '*.account.json' } | ForEach-Object { Usage-One $_.BaseName }
+      Where-Object { $_.Name -notlike '*.usage.json' -and $_.Name -notlike '*.account.json' } | ForEach-Object { Refresh-UsageCache $_.BaseName }
+    Cmd-List
   } elseif ($arg) {
     Usage-One $arg
   } else {
