@@ -9,7 +9,7 @@
 [CmdletBinding()]
 param(
   [Parameter(Position = 0)] [string] $Command = 'help',
-  [Parameter(Position = 1, ValueFromRemainingArguments = $true)] [string[]] $Rest
+  [Parameter(Position = 1, ValueFromRemainingArguments = $true)] [string[]] $Rest = @()
 )
 
 $ErrorActionPreference = 'Stop'
