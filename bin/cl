@@ -175,7 +175,8 @@ _cl_usage_one() { # name
 
 # Refresh one profile's live usage into its cache. Quiet on success; warns on failure.
 _cl_refresh_one() { # name
-  local name="$1" pf="$CL_PROFILES_DIR/$name.json" oauth acc usage
+  local name="$1"
+  local pf="$CL_PROFILES_DIR/$name.json" oauth acc usage
   [ -f "$pf" ] || return 0
   oauth="$(cat "$pf")"
   if cl_token_expired "$oauth"; then
