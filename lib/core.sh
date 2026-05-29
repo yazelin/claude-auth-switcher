@@ -95,6 +95,7 @@ cl_format_usage() { # usage_json
     local u rs
     u="$(echo "$usage" | jq -r --arg k "$2" '.[$k].utilization // empty')"
     [ -n "$u" ] || return 0
+    u="$(printf '%.0f' "$u" 2>/dev/null || printf '%s' "$u")"
     rs="$(echo "$usage" | jq -r --arg k "$2" '.[$k].resets_at // empty')"
     if [ -n "$rs" ] && [ "$rs" != "null" ]; then
       rs="$(date -d "$rs" '+%m/%d %H:%M' 2>/dev/null || echo "$rs")"
@@ -131,7 +132,7 @@ cl_profile_email() { # profiles_dir, name
 # One-line cached-usage summary from a usage file, e.g.
 # "5h 42% used @14:00 | wk 18% used". "-" if absent/empty.
 cl_usage_short() { # usage_file
-  local uf="$1" out="" u rs
+  local uf="$1" out="" u rs seg
   [ -f "$uf" ] || { printf '-'; return 0; }
   u="$(jq -r '.five_hour.utilization // empty' "$uf" 2>/dev/null || true)"
   if [ -n "$u" ]; then
@@ -143,7 +144,10 @@ cl_usage_short() { # usage_file
   u="$(jq -r '.seven_day.utilization // empty' "$uf" 2>/dev/null || true)"
   if [ -n "$u" ]; then
     u="$(printf '%.0f' "$u" 2>/dev/null || printf '%s' "$u")"
-    if [ -n "$out" ]; then out="$out | wk ${u}% used"; else out="wk ${u}% used"; fi
+    rs="$(jq -r '.seven_day.resets_at // empty' "$uf" 2>/dev/null || true)"
+    if [ -n "$rs" ] && [ "$rs" != "null" ]; then rs="$(date -d "$rs" '+%m/%d' 2>/dev/null || true)"; else rs=""; fi
+    if [ -n "$rs" ]; then seg="wk ${u}% used @${rs}"; else seg="wk ${u}% used"; fi
+    if [ -n "$out" ]; then out="$out | $seg"; else out="$seg"; fi
   fi
   [ -n "$out" ] || out="-"
   printf '%s' "$out"

@@ -16,7 +16,7 @@ usage:
   cl switch              Interactive switcher (kills running claude first)
   cl kill                Kill all running claude processes
   cl list                Table of profiles: active marker, email, plan, cached usage
-  cl usage [name|--all]  Live usage; --all refreshes all + shows the table; name = detail
+  cl usage [name|--all]  Live usage table for all accounts; name = one account's detail
   cl current             Print active profile
   cl remove <name>       Delete a profile
   cl export <a.tgz>      Back up all profiles
@@ -192,20 +192,17 @@ _cl_refresh_one() { # name
 
 cmd_usage() { # [name|--all]
   local arg="${1:-}"
-  if [ "$arg" = "--all" ]; then
-    # Refresh every profile's usage live, then show the side-by-side table.
-    local f
-    for f in "$CL_PROFILES_DIR"/*.json; do
-      [ -e "$f" ] || continue; case "$f" in *.usage.json|*.account.json) continue;; esac
-      _cl_refresh_one "$(basename "$f" .json)"
-    done
-    cmd_list
-  elif [ -n "$arg" ]; then
-    _cl_usage_one "$arg"
-  else
-    local cur; cur="$(cmd_current)"; [ "$cur" = "none" ] && die "no active profile"
-    _cl_usage_one "$cur"
+  if [ -n "$arg" ] && [ "$arg" != "--all" ]; then
+    _cl_usage_one "$arg"   # a named profile: refresh one + per-bucket detail
+    return
   fi
+  # No arg (or --all): refresh every profile live, then show the side-by-side table.
+  local f
+  for f in "$CL_PROFILES_DIR"/*.json; do
+    [ -e "$f" ] || continue; case "$f" in *.usage.json|*.account.json) continue;; esac
+    _cl_refresh_one "$(basename "$f" .json)"
+  done
+  cmd_list
 }
 
 cmd_remove() { # name

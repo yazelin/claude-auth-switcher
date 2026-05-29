@@ -82,7 +82,7 @@ cl use <name>          Switch active account (kills running claude first)
 cl switch              Interactive switcher (kills running claude first)
 cl kill                Kill all running claude processes
 cl list                Table of profiles: active marker, email, plan, cached usage
-cl usage [name|--all]  Live usage; --all refreshes all + shows the table; name = detail
+cl usage [name|--all]  Live usage table for all accounts; name = one account's detail
 cl current             Print active profile
 cl remove <name>       Delete a profile
 cl ps                  List running claude processes (excludes this session)
@@ -121,13 +121,14 @@ cached usage:
 
 ```
 CURRENT  PROFILE      EMAIL                  PLAN   USAGE
-*        personal     ya***@gmail.com        max    5h 42% used @14:00 | wk 18% used
-         company      ya***@company.com      pro    5h 7% used         | wk 55% used
+*        personal     ya***@gmail.com        max    5h 42% used @14:00 | wk 18% used @06/02
+         company      ya***@company.com      pro    5h 7% used @09:00 | wk 55% used @06/05
 ```
 
-Plain `cl list` does not hit the network. `cl usage --all` refreshes every account's
-usage live and then prints the same table, so you can compare accounts side by side.
-`cl usage <name>` fetches one account and shows the per-bucket detail:
+Plain `cl list` does not hit the network. `cl usage` (with no argument, or `--all`)
+refreshes every account's usage live and then prints the same table, so you can
+compare accounts side by side. `cl usage <name>` fetches just that account and shows
+the per-bucket detail:
 
 ```
 personal:

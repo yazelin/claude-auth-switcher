@@ -584,8 +584,8 @@
             <div class="code-block-header"><span>PowerShell</span><button class="copy-btn" onclick="copyCode(this, 'cl list')">複製</button></div>
             <code><span class="hl-prompt">PS&gt; </span><span class="hl-cmd">cl list</span>
 <span class="hl-out">CURRENT  PROFILE      EMAIL                  PLAN   USAGE
-*        personal     ya***@gmail.com        max    5h 42% used @14:00 | wk 18% used
-         company      ya***@company.com      pro    5h 7% used         | wk 55% used</span></code>
+*        personal     ya***@gmail.com        max    5h 42% used @14:00 | wk 18% used @06/02
+         company      ya***@company.com      pro    5h 7% used @09:00 | wk 55% used @06/05</span></code>
           </div>
           <p style="margin-top:.75rem;font-size:.875rem;color:var(--text-dim)"><code style="font-family:monospace;color:var(--clay-dark)">*</code> 號是目前使用中的帳號；email 會遮罩；百分比是<strong>已用量</strong>（5 小時 / 每週）。</p>
         </div>
@@ -668,19 +668,19 @@
 <section style="padding:0 0 2rem">
   <div class="container">
     <div class="section-label">多帳號用量比較</div>
-    <div class="section-title">cl usage --all 並排比較</div>
+    <div class="section-title">cl usage 並排比較</div>
     <div class="demo-box">
       <div class="demo-box-header">
         <div class="dots"><span></span><span></span><span></span></div>
-        <span class="demo-title">PowerShell / bash — cl usage --all</span>
+        <span class="demo-title">PowerShell / bash — cl usage</span>
       </div>
-      <div class="demo-body"><span class="demo-prompt">PS&gt; </span><span class="demo-cmd">cl usage --all</span>
+      <div class="demo-body"><span class="demo-prompt">PS&gt; </span><span class="demo-cmd">cl usage</span>
 <span class="demo-out">CURRENT  PROFILE      EMAIL                  PLAN   USAGE</span>
-<span class="demo-cur">*</span>        personal     ya***@gmail.com        max    5h 42% used @14:00 | wk 18% used
-         company      ya***@company.com      pro    5h 7% used         | wk 55% used</div>
+<span class="demo-cur">*</span>        personal     ya***@gmail.com        max    5h 42% used @14:00 | wk 18% used @06/02
+         company      ya***@company.com      pro    5h 7% used @09:00 | wk 55% used @06/05</div>
     </div>
     <p style="text-align:center;font-size:.825rem;color:var(--text-dim);margin-top:1rem">
-      <code style="font-family:monospace">--all</code> 會先即時更新每個帳號的用量，再用同一張表格並排呈現 — 一眼比較哪個帳號還有額度。
+      <code style="font-family:monospace">cl usage</code> 不帶參數就會即時更新<strong>每個帳號</strong>的用量並排成表（等同 <code style="font-family:monospace">--all</code>）— 一眼比較哪個帳號還有額度。重置時間顯示為你的本地時間（台灣 UTC+8）。
     </p>
   </div>
 </section>
@@ -726,7 +726,7 @@
         <tr><td><code>cl switch</code></td><td>互動選單切換帳號，一樣會先關 claude</td></tr>
         <tr><td><code>cl kill</code></td><td>立即關閉所有正在運行的 claude 程序</td></tr>
         <tr><td><code>cl list</code></td><td>表格列出所有帳號：使用中標記、email（遮罩）、訂閱、快取用量</td></tr>
-        <tr><td><code>cl usage [name|--all]</code></td><td>即時用量；<code>--all</code> 更新全部並印出並排比較表，單一帳號顯示詳細分項</td></tr>
+        <tr><td><code>cl usage [name|--all]</code></td><td>全部帳號即時用量並排表（不帶參數=全部）；單一帳號顯示詳細分項</td></tr>
         <tr><td><code>cl current</code></td><td>顯示目前使用中的 profile 名稱</td></tr>
         <tr><td><code>cl remove &lt;名稱&gt;</code></td><td>刪除一個 profile</td></tr>
         <tr><td><code>cl ps</code></td><td>列出偵測到的 claude 程序（排除本 session）</td></tr>

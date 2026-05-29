@@ -147,7 +147,7 @@ function Format-Usage($usage) {
     $b = $usage.($row[1])
     if ($null -ne $b -and $null -ne $b.utilization) {
       $reset = if ($b.resets_at) { ([datetime]$b.resets_at).ToString('MM/dd HH:mm') } else { '' }
-      '{0,-14} {1,5}% used   {2}' -f $row[0], $b.utilization, ($(if ($reset) { "reset $reset" } else { '' }))
+      '{0,-14} {1,5}% used   {2}' -f $row[0], [int][math]::Round([double]$b.utilization), ($(if ($reset) { "reset $reset" } else { '' }))
     }
   }
 }
@@ -179,7 +179,10 @@ function Format-UsageShort([string]$name) {
     $parts += ('5h {0}% used{1}' -f [int][math]::Round([double]$fh.utilization), $r)
   }
   $wk = $u.seven_day
-  if ($wk -and $null -ne $wk.utilization) { $parts += ('wk {0}% used' -f [int][math]::Round([double]$wk.utilization)) }
+  if ($wk -and $null -ne $wk.utilization) {
+    $wr = if ($wk.resets_at) { ' @' + ([datetime]$wk.resets_at).ToString('MM/dd') } else { '' }
+    $parts += ('wk {0}% used{1}' -f [int][math]::Round([double]$wk.utilization), $wr)
+  }
   if ($parts.Count -eq 0) { return '-' }
   ($parts -join ' | ')
 }
@@ -266,7 +269,7 @@ usage:
   cl switch              Interactive switcher (kills running claude first)
   cl kill                Kill all running claude processes
   cl list                Table of profiles: active marker, email, plan, cached usage
-  cl usage [name|--all]  Live usage; --all refreshes all + shows the table; name = detail
+  cl usage [name|--all]  Live usage table for all accounts; name = one account's detail
   cl current             Print active profile
   cl remove <name>       Delete a profile
   cl export <a.zip>      Back up all profiles
@@ -425,18 +428,14 @@ function Refresh-UsageCache([string]$name) {
 
 function Cmd-Usage([string[]]$argv) {
   $arg = if ($argv) { $argv[0] } else { '' }
-  if ($arg -eq '--all') {
-    # Refresh every profile's usage live, then show the side-by-side table.
-    Get-ChildItem $CL_PROFILES_DIR -Filter '*.json' -ErrorAction SilentlyContinue |
-      Where-Object { $_.Name -notlike '*.usage.json' -and $_.Name -notlike '*.account.json' } | ForEach-Object { Refresh-UsageCache $_.BaseName }
-    Cmd-List
-  } elseif ($arg) {
-    Usage-One $arg
-  } else {
-    $cur = Get-Current
-    if ($cur -eq 'none') { Die 'no active profile' }
-    Usage-One $cur
+  if ($arg -and $arg -ne '--all') {
+    Usage-One $arg   # a named profile: refresh one + per-bucket detail
+    return
   }
+  # No arg (or --all): refresh every profile live, then show the side-by-side table.
+  Get-ChildItem $CL_PROFILES_DIR -Filter '*.json' -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -notlike '*.usage.json' -and $_.Name -notlike '*.account.json' } | ForEach-Object { Refresh-UsageCache $_.BaseName }
+  Cmd-List
 }
 
 function Cmd-Remove([string]$name) {

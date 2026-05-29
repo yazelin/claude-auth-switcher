@@ -94,7 +94,7 @@ switched to 'company'
 | `cl switch` | Interactive switcher — kills running claude first |
 | `cl kill` | Kill all running claude processes |
 | `cl list` | Table of profiles: active marker, email, plan, cached usage |
-| `cl usage [name\|--all]` | Live usage; `--all` refreshes all + shows the table; a name shows per-bucket detail |
+| `cl usage [name\|--all]` | Live usage table for all accounts (no arg = all); a name shows per-bucket detail |
 | `cl current` | Print the active profile name |
 | `cl remove <name>` | Delete a saved profile |
 | `cl ps` | Show detected claude processes (excludes this session) |
@@ -128,9 +128,9 @@ would undo a switch — so `cl use` and `cl switch` kill live `claude` processes
 ## Usage Tracking
 
 `cl list` shows each account's cached usage in one aligned table (see above).
-`cl usage --all` refreshes every account live and reprints that table so you can
-compare them side by side. `cl usage <name>` fetches one account and shows the
-per-bucket detail:
+`cl usage` (no argument, or `--all`) refreshes every account live and reprints that
+table so you can compare them side by side. `cl usage <name>` fetches just that
+account and shows the per-bucket detail:
 
 ```
 personal:
