@@ -15,6 +15,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $CL_CRED         = if ($env:CL_CRED)         { $env:CL_CRED }         else { Join-Path $env:USERPROFILE '.claude\.credentials.json' }
+$CL_ACCOUNT      = if ($env:CL_ACCOUNT)      { $env:CL_ACCOUNT }      else { Join-Path $env:USERPROFILE '.claude.json' }
 $CL_PROFILES_DIR = if ($env:CL_PROFILES_DIR) { $env:CL_PROFILES_DIR } else { Join-Path $env:USERPROFILE '.claude_auth_profiles' }
 $CL_CLIENT_ID    = if ($env:CL_CLIENT_ID)    { $env:CL_CLIENT_ID }    else { '9d1c250a-e61b-44d9-88ed-5944d1962f5e' }
 $CL_TOKEN_URL    = if ($env:CL_TOKEN_URL)    { $env:CL_TOKEN_URL }    else { 'https://platform.claude.com/v1/oauth/token' }
@@ -38,7 +39,71 @@ function Write-Cred($cred) {
 }
 # -------------------------------------------------------------------------------------
 
+# Read/write UTF-8 WITHOUT a BOM. PS 5.1's '-Encoding utf8' prepends a BOM which
+# Node-based readers (Claude Code) may reject; .NET ReadAllText also strips any
+# existing BOM, normalising the file on write-back.
+function Read-AllText([string]$path) { [System.IO.File]::ReadAllText($path) }
+function Write-AllTextNoBom([string]$path, [string]$text) {
+  [System.IO.File]::WriteAllText($path, $text, (New-Object System.Text.UTF8Encoding $false))
+}
+
+# Find a top-level JSON object value by key, returning the span of its { ... }
+# block. Scans for balanced braces (string-aware) so it works regardless of
+# nesting - safer than a regex on the large, PS-unparseable ~/.claude.json.
+function Get-JsonObjectSpan([string]$text, [string]$key) {
+  $m = [regex]::Match($text, '"' + [regex]::Escape($key) + '"\s*:\s*\{')
+  if (-not $m.Success) { return $null }
+  $braceStart = $m.Index + $m.Length - 1   # index of the opening '{'
+  $depth = 0; $inStr = $false; $esc = $false; $i = $braceStart
+  for (; $i -lt $text.Length; $i++) {
+    $c = $text[$i]
+    if ($inStr) {
+      if ($esc) { $esc = $false }
+      elseif ($c -eq '\') { $esc = $true }
+      elseif ($c -eq '"') { $inStr = $false }
+    } else {
+      if ($c -eq '"') { $inStr = $true }
+      elseif ($c -eq '{') { $depth++ }
+      elseif ($c -eq '}') { $depth--; if ($depth -eq 0) { break } }
+    }
+  }
+  if ($depth -ne 0) { return $null }
+  [PSCustomObject]@{ ValueStart = $braceStart; ValueEnd = $i }   # both inclusive
+}
+
+# Extract the oauthAccount {...} block (account identity) from ~/.claude.json.
+# Returns the raw JSON object string, or $null if absent.
+function Read-Account {
+  if (-not (Test-Path $CL_ACCOUNT)) { return $null }
+  $text = Read-AllText $CL_ACCOUNT
+  $span = Get-JsonObjectSpan $text 'oauthAccount'
+  if (-not $span) { return $null }
+  $text.Substring($span.ValueStart, $span.ValueEnd - $span.ValueStart + 1)
+}
+
+# Surgically replace ONLY the oauthAccount block in ~/.claude.json, preserving
+# every other key (projects, history, ...) byte-for-byte.
+function Write-Account([string]$block) {
+  if (-not $block) { return }
+  $block = $block.Trim()
+  if (-not (Test-Path $CL_ACCOUNT)) {
+    Write-Warning "no $CL_ACCOUNT to update; run Claude Code once first"
+    return
+  }
+  $text = Read-AllText $CL_ACCOUNT
+  $span = Get-JsonObjectSpan $text 'oauthAccount'
+  if ($span) {
+    $new = $text.Substring(0, $span.ValueStart) + $block + $text.Substring($span.ValueEnd + 1)
+  } else {
+    $i = $text.IndexOf('{')
+    if ($i -lt 0) { Write-Warning "unexpected $CL_ACCOUNT format; oauthAccount not updated"; return }
+    $new = $text.Substring(0, $i + 1) + "`n  `"oauthAccount`": $block," + $text.Substring($i + 1)
+  }
+  Write-AllTextNoBom $CL_ACCOUNT $new
+}
+
 function Profile-Path([string]$name) { Join-Path $CL_PROFILES_DIR "$name.json" }
+function Account-Path([string]$name) { Join-Path $CL_PROFILES_DIR "$name.account.json" }
 function Usage-Path([string]$name)   { Join-Path $CL_PROFILES_DIR "$name.usage.json" }
 function Current-Path                 { Join-Path $CL_PROFILES_DIR 'current' }
 
@@ -85,7 +150,7 @@ function Format-Usage($usage) {
 
 function Find-ProfileByRefresh([string]$want) {
   Get-ChildItem $CL_PROFILES_DIR -Filter '*.json' -ErrorAction SilentlyContinue |
-    Where-Object { $_.Name -notlike '*.usage.json' } | ForEach-Object {
+    Where-Object { $_.Name -notlike '*.usage.json' -and $_.Name -notlike '*.account.json' } | ForEach-Object {
       $o = Get-Content $_.FullName -Raw | ConvertFrom-Json
       if ($o.refreshToken -eq $want) { return ($_.BaseName) }
     } | Select-Object -First 1
@@ -107,7 +172,8 @@ usage:
   cl doctor              Show paths, profile summary
   cl help                Show this help
 
-env: CL_PROFILES_DIR (default ~\.claude_auth_profiles), CL_CRED (default ~\.claude\.credentials.json)
+env: CL_PROFILES_DIR (default ~\.claude_auth_profiles), CL_CRED (default ~\.claude\.credentials.json),
+     CL_ACCOUNT (default ~\.claude.json - holds the oauthAccount subscription identity)
 '@
 }
 
@@ -118,6 +184,7 @@ function Cmd-Login([string]$name) {
   $backup = "$CL_CRED.cl_bak"
   Copy-Item $CL_CRED $backup -Force
   Remove-Item $CL_CRED -Force
+  $acctBackup = Read-Account   # old account identity, restored after login
 
   $ok = $false
   try {
@@ -127,6 +194,8 @@ function Cmd-Login([string]$name) {
       if ($cred.claudeAiOauth) {
         Ensure-Dir
         $cred.claudeAiOauth | ConvertTo-Json -Depth 25 | Set-Content (Profile-Path $name) -Encoding utf8
+        $acct = Read-Account
+        if ($acct) { Write-AllTextNoBom (Account-Path $name) $acct }
         Set-Current $name
         $ok = $true
       }
@@ -136,6 +205,7 @@ function Cmd-Login([string]$name) {
       Copy-Item $backup $CL_CRED -Force
       Remove-Item $backup -Force
     }
+    if ($acctBackup) { Write-Account $acctBackup }
   }
 
   if ($ok) { "saved as '$name'; run 'cl use $name' to switch" }
@@ -147,6 +217,9 @@ function Cmd-Import([string]$name) {
   $cred = Read-Cred
   if (-not $cred.claudeAiOauth) { Die "no claudeAiOauth block in $CL_CRED" }
   $cred.claudeAiOauth | ConvertTo-Json -Depth 25 | Set-Content (Profile-Path $name) -Encoding utf8
+  $acct = Read-Account
+  if ($acct) { Write-AllTextNoBom (Account-Path $name) $acct }
+  else { Write-Warning "no oauthAccount in $CL_ACCOUNT - subscription identity not captured; 'cl use' may fall back to API billing" }
   Set-Current $name
   "imported '$name'"
 }
@@ -182,13 +255,19 @@ function Cmd-Use([string[]]$argv) {
   }
   $cred.claudeAiOauth = $oauth
   Write-Cred $cred
+  $ap = Account-Path $name
+  if (Test-Path $ap) {
+    Write-Account (Read-AllText $ap)
+  } else {
+    Write-Warning "no saved account identity for '$name' - re-run 'cl import $name' while logged in, or Claude Code may bill via API"
+  }
   Set-Current $name
   "switched to '$name'"
 }
 
 function Cmd-List {
   $cur = Get-Current
-  $items = Get-ChildItem $CL_PROFILES_DIR -Filter '*.json' -ErrorAction SilentlyContinue | Where-Object { $_.Name -notlike '*.usage.json' }
+  $items = Get-ChildItem $CL_PROFILES_DIR -Filter '*.json' -ErrorAction SilentlyContinue | Where-Object { $_.Name -notlike '*.usage.json' -and $_.Name -notlike '*.account.json' }
   if (-not $items) { 'no profiles - ''cl import <name>'' to add one'; return }
   foreach ($f in $items) {
     $name = $f.BaseName
@@ -225,7 +304,7 @@ function Cmd-Usage([string[]]$argv) {
   $arg = if ($argv) { $argv[0] } else { '' }
   if ($arg -eq '--all') {
     Get-ChildItem $CL_PROFILES_DIR -Filter '*.json' -ErrorAction SilentlyContinue |
-      Where-Object { $_.Name -notlike '*.usage.json' } | ForEach-Object { Usage-One $_.BaseName }
+      Where-Object { $_.Name -notlike '*.usage.json' -and $_.Name -notlike '*.account.json' } | ForEach-Object { Usage-One $_.BaseName }
   } elseif ($arg) {
     Usage-One $arg
   } else {
@@ -240,6 +319,7 @@ function Cmd-Remove([string]$name) {
   $pf = Profile-Path $name
   if (-not (Test-Path $pf)) { Die "no such profile: $name" }
   Remove-Item $pf -Force
+  if (Test-Path (Account-Path $name)) { Remove-Item (Account-Path $name) -Force }
   if (Test-Path (Usage-Path $name)) { Remove-Item (Usage-Path $name) -Force }
   if ((Get-Current) -eq $name -and (Test-Path (Current-Path))) { Remove-Item (Current-Path) -Force }
   "removed '$name'"
@@ -247,7 +327,7 @@ function Cmd-Remove([string]$name) {
 
 function Cmd-Switch {
   $names = Get-ChildItem $CL_PROFILES_DIR -Filter '*.json' -ErrorAction SilentlyContinue |
-    Where-Object { $_.Name -notlike '*.usage.json' } | ForEach-Object { $_.BaseName }
+    Where-Object { $_.Name -notlike '*.usage.json' -and $_.Name -notlike '*.account.json' } | ForEach-Object { $_.BaseName }
   if (-not $names) { Die "no profiles - 'cl import <name>' first" }
   if (Get-Process claude -ErrorAction SilentlyContinue) {
     Write-Warning 'a claude process is running; switching changes its token on next API call.'
@@ -276,6 +356,7 @@ function Cmd-Doctor {
   'claude-auth-switcher doctor'
   "  profiles dir : $CL_PROFILES_DIR"
   "  credentials  : $CL_CRED $(if (Test-Path $CL_CRED) {'(present)'} else {'(MISSING)'})"
+  "  account file : $CL_ACCOUNT $(if (Test-Path $CL_ACCOUNT) {if (Read-Account) {'(oauthAccount present)'} else {'(no oauthAccount)'}} else {'(MISSING)'})"
   "  claude proc  : $(if (Get-Process claude -ErrorAction SilentlyContinue) {'running'} else {'not running'})"
   "  active       : $(Get-Current)"
   '  profiles     :'

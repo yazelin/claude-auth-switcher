@@ -23,7 +23,8 @@ usage:
   cl doctor              Show paths, claude process state, profile summary
   cl help                Show this help
 
-env: CL_PROFILES_DIR (default ~/.claude_auth_profiles), CL_CRED (default ~/.claude/.credentials.json)
+env: CL_PROFILES_DIR (default ~/.claude_auth_profiles), CL_CRED (default ~/.claude/.credentials.json),
+     CL_ACCOUNT (default ~/.claude.json — holds the oauthAccount subscription identity)
 EOF
 }
 
@@ -38,6 +39,7 @@ cmd_login() { # name
   local backup="${CL_CRED}.cl_bak"
   cp "$CL_CRED" "$backup"
   rm -f "$CL_CRED"
+  local acct_backup; acct_backup="$(cl_read_account "$CL_ACCOUNT")"   # restored after login
 
   local ok=0
   if claude auth login; then
@@ -46,6 +48,8 @@ cmd_login() { # name
       if [ -n "$oauth" ] && [ "$oauth" != "null" ]; then
         mkdir -p "$CL_PROFILES_DIR"; chmod 700 "$CL_PROFILES_DIR" 2>/dev/null || true
         umask 077; echo "$oauth" | jq . > "$CL_PROFILES_DIR/$name.json"
+        local acct; acct="$(cl_read_account "$CL_ACCOUNT")"
+        [ -n "$acct" ] && echo "$acct" | jq . > "$CL_PROFILES_DIR/$name.account.json"
         echo "$name" > "$CL_PROFILES_DIR/current"
         ok=1
       fi
@@ -53,6 +57,7 @@ cmd_login() { # name
   fi
 
   cp "$backup" "$CL_CRED"; rm -f "$backup"
+  [ -n "$acct_backup" ] && cl_write_account "$CL_ACCOUNT" "$acct_backup"
 
   [ "$ok" -eq 1 ] && echo "saved as '$name' — run 'cl use $name' to switch" \
                   || die "login did not complete or credentials were not written"
@@ -66,6 +71,9 @@ cmd_import() { # name
   umask 077
   echo "$oauth" | jq . > "$CL_PROFILES_DIR/$name.json"
   chmod 700 "$CL_PROFILES_DIR" 2>/dev/null || true
+  local acct; acct="$(cl_read_account "$CL_ACCOUNT")"
+  if [ -n "$acct" ]; then echo "$acct" | jq . > "$CL_PROFILES_DIR/$name.account.json"
+  else echo "cl: no oauthAccount in $CL_ACCOUNT — subscription identity not captured; 'cl use' may fall back to API billing" >&2; fi
   echo "$name" > "$CL_PROFILES_DIR/current"
   echo "imported '$name'"
 }
@@ -107,6 +115,9 @@ cmd_use() { # name [--force|-y]
     fi
   fi
   cl_merge_oauth "$CL_CRED" "$(echo "$oauth" | jq -c .)"
+  local apf="$CL_PROFILES_DIR/$name.account.json"
+  if [ -f "$apf" ]; then cl_write_account "$CL_ACCOUNT" "$(cat "$apf")"
+  else echo "cl: no saved account identity for '$name' — re-run 'cl import $name' while logged in, or Claude Code may bill via API" >&2; fi
   echo "$name" > "$CL_PROFILES_DIR/current"
   cl_unlock; trap - EXIT
   echo "switched to '$name'"
@@ -118,7 +129,7 @@ cmd_list() {
   local found=0
   for f in "$CL_PROFILES_DIR"/*.json; do
     [ -e "$f" ] || continue
-    case "$f" in *.usage.json) continue;; esac
+    case "$f" in *.usage.json|*.account.json) continue;; esac
     found=1
     name="$(basename "$f" .json)"
     local mark="  "; [ "$name" = "$cur" ] && mark="* "
@@ -157,7 +168,7 @@ cmd_usage() { # [name|--all]
   if [ "$arg" = "--all" ]; then
     local f
     for f in "$CL_PROFILES_DIR"/*.json; do
-      [ -e "$f" ] || continue; case "$f" in *.usage.json) continue;; esac
+      [ -e "$f" ] || continue; case "$f" in *.usage.json|*.account.json) continue;; esac
       _cl_usage_one "$(basename "$f" .json)"
     done
   elif [ -n "$arg" ]; then
@@ -172,7 +183,7 @@ cmd_remove() { # name
   local name="${1:-}"; [ -n "$name" ] || die "usage: cl remove <name>"
   local pf="$CL_PROFILES_DIR/$name.json"
   [ -f "$pf" ] || die "no such profile: $name"
-  rm -f "$pf" "$CL_PROFILES_DIR/$name.usage.json"
+  rm -f "$pf" "$CL_PROFILES_DIR/$name.usage.json" "$CL_PROFILES_DIR/$name.account.json"
   [ "$(cmd_current)" = "$name" ] && rm -f "$CL_PROFILES_DIR/current"
   echo "removed '$name'"
 }
@@ -182,7 +193,7 @@ cl_claude_running() { pgrep -x claude >/dev/null 2>&1 || pgrep -f '/claude( |$)'
 cmd_switch() {
   local names=() f
   for f in "$CL_PROFILES_DIR"/*.json; do
-    [ -e "$f" ] || continue; case "$f" in *.usage.json) continue;; esac
+    [ -e "$f" ] || continue; case "$f" in *.usage.json|*.account.json) continue;; esac
     names+=("$(basename "$f" .json)")
   done
   [ "${#names[@]}" -gt 0 ] || die "no profiles — 'cl import <name>' first"
@@ -212,6 +223,7 @@ cmd_doctor() {
   echo "claude-auth-switcher doctor"
   echo "  profiles dir : $CL_PROFILES_DIR"
   echo "  credentials  : $CL_CRED $( [ -f "$CL_CRED" ] && echo '(present)' || echo '(MISSING)')"
+  echo "  account file : $CL_ACCOUNT $( [ -f "$CL_ACCOUNT" ] && { [ -n "$(cl_read_account "$CL_ACCOUNT")" ] && echo '(oauthAccount present)' || echo '(no oauthAccount)'; } || echo '(MISSING)')"
   echo "  jq           : $(command -v jq || echo 'MISSING')"
   echo "  curl         : $(command -v curl || echo 'MISSING')"
   echo "  claude proc  : $(cl_claude_running && echo running || echo 'not running')"
