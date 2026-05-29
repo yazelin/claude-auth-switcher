@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Auth Switcher — 多帳號切換工具</title>
+<meta name="description" content="在一台電腦上管理多個 Claude Code 訂閱帳號，一個指令即時切換，不會掉訂閱、不需重新登入。支援 Windows、Linux、macOS。">
+<style>
+  :root {
+    --bg: #faf9f5;
+    --surface: #ffffff;
+    --surface2: #f3f0e8;
+    --border: #e8e3d6;
+    --clay: #d97757;
+    --clay-dark: #bd5d3a;
+    --clay-soft: rgba(217,119,87,.12);
+    --green: #5b9e6f;
+    --yellow: #c79135;
+    --red: #c5523f;
+    --text: #2a2722;
+    --text-dim: #6e6a5c;
+    --code-bg: #2a2620;
+    --code-surface: #36312a;
+    --code-border: #443d33;
+    --code-text: #ece7dd;
+    --code-prompt: #8fc99a;
+    --code-cmd: #eba17c;
+    --code-url: #d9b48a;
+    --code-arg: #e3c07b;
+    --code-out: #9a917d;
+    --radius: 14px;
+    --radius-sm: 9px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "PingFang TC", "Microsoft JhengHei", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 16px;
+  }
+
+  /* ── Nav ── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(250,249,245,.9);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 56px;
+  }
+  .nav-brand {
+    font-weight: 700; font-size: 1rem;
+    color: var(--text); text-decoration: none;
+  }
+  .nav-brand span { color: var(--clay); }
+  .nav-links { display: flex; gap: 1.5rem; }
+  .nav-links a {
+    color: var(--text-dim); text-decoration: none; font-size: .875rem;
+    transition: color .2s;
+  }
+  .nav-links a:hover { color: var(--clay-dark); }
+
+  /* ── Layout ── */
+  .container { max-width: 900px; margin: 0 auto; padding: 0 1.5rem; }
+
+  /* ── Hero ── */
+  .hero {
+    padding: 6rem 1.5rem 5rem;
+    text-align: center;
+    background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(217,119,87,.18) 0%, transparent 70%);
+  }
+  .hero-badge {
+    display: inline-block;
+    background: var(--clay-soft); border: 1px solid rgba(217,119,87,.35);
+    color: var(--clay-dark); font-size: .75rem; font-weight: 600;
+    padding: .3rem .8rem; border-radius: 99px; margin-bottom: 1.5rem;
+    letter-spacing: .04em;
+  }
+  h1 {
+    font-size: clamp(1.8rem, 5vw, 3.2rem);
+    font-weight: 800; line-height: 1.15;
+    margin-bottom: 1rem; letter-spacing: -.02em;
+  }
+  h1 em { font-style: normal; color: var(--clay); }
+  .hero-sub {
+    font-size: clamp(.9rem, 2vw, 1.15rem);
+    color: var(--text-dim); max-width: 580px; margin: 0 auto 2.5rem;
+  }
+  .hero-note {
+    font-size: .8rem; color: var(--text-dim); margin-top: 1rem;
+  }
+
+  /* ── OS Tabs ── */
+  .os-tabs {
+    display: flex; gap: .5rem;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: .35rem;
+    width: fit-content; margin: 0 auto 1.5rem;
+    box-shadow: 0 1px 3px rgba(42,39,34,.04);
+  }
+  .os-tab {
+    padding: .45rem 1.2rem; border-radius: var(--radius-sm);
+    border: none; cursor: pointer; font-size: .875rem; font-weight: 600;
+    color: var(--text-dim); background: transparent; transition: all .2s;
+  }
+  .os-tab.active { background: var(--clay); color: #fff; }
+  .os-panel { display: none; }
+  .os-panel.active { display: block; }
+
+  /* ── Install / terminal boxes ── */
+  .install-box {
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    max-width: 680px; margin: 0 auto;
+    text-align: left;
+    box-shadow: 0 8px 30px rgba(42,39,34,.12);
+  }
+  .install-box-header {
+    background: var(--code-surface);
+    padding: .6rem 1rem;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--code-border);
+    font-size: .75rem; color: var(--code-out);
+    gap: .75rem;
+  }
+  .dots { display: flex; gap: 6px; flex-shrink: 0; }
+  .dots span {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--code-border);
+  }
+  .dots span:nth-child(1) { background: var(--red); }
+  .dots span:nth-child(2) { background: var(--yellow); }
+  .dots span:nth-child(3) { background: var(--green); }
+  .install-code {
+    padding: 1.2rem 1.4rem;
+    font-family: "SFMono-Regular", "Cascadia Code", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: .875rem; color: var(--code-text); line-height: 1.7;
+    white-space: pre-wrap; word-break: break-all;
+    overflow-x: auto;
+  }
+  .install-code .prompt { color: var(--code-prompt); user-select: none; }
+  .install-code .cmd { color: var(--code-cmd); }
+  .install-code .url { color: var(--code-url); }
+  .copy-btn {
+    display: inline-flex; align-items: center; gap: .3rem;
+    background: var(--clay); color: #fff;
+    border: none; border-radius: var(--radius-sm);
+    padding: .35rem .8rem; font-size: .78rem; font-weight: 600;
+    cursor: pointer; transition: all .2s; white-space: nowrap; flex-shrink: 0;
+  }
+  .copy-btn:hover { background: var(--clay-dark); }
+  .copy-btn.copied { background: var(--green); color: #fff; }
+
+  /* ── Features ── */
+  .features {
+    padding: 4rem 0;
+    border-top: 1px solid var(--border);
+  }
+  .section-label {
+    text-align: center; font-size: .75rem; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase;
+    color: var(--clay); margin-bottom: .75rem;
+  }
+  .section-title {
+    text-align: center; font-size: clamp(1.3rem, 3vw, 2rem);
+    font-weight: 700; margin-bottom: 2.5rem;
+  }
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.2rem;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    transition: border-color .2s, box-shadow .2s, transform .2s;
+  }
+  .card:hover { border-color: var(--clay); box-shadow: 0 6px 20px rgba(217,119,87,.1); transform: translateY(-2px); }
+  .card-tag {
+    display: inline-block;
+    font-size: .7rem; font-weight: 700; letter-spacing: .06em;
+    color: var(--clay-dark);
+    background: var(--clay-soft); border-radius: 5px;
+    padding: .15rem .45rem; margin-bottom: .75rem;
+  }
+  .card h3 { font-size: 1rem; font-weight: 700; margin-bottom: .5rem; }
+  .card p { font-size: .875rem; color: var(--text-dim); line-height: 1.6; }
+  .card code {
+    font-family: "SFMono-Regular", Consolas, monospace;
+    background: var(--surface2); padding: .1rem .35rem;
+    border-radius: 4px; color: var(--clay-dark); font-size: .85em;
+  }
+
+  /* ── How it works ── */
+  .how-section { padding: 4rem 0; border-top: 1px solid var(--border); }
+  .swap-table {
+    width: 100%; border-collapse: collapse; font-size: .9rem;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .swap-table th {
+    text-align: left; padding: .8rem 1.1rem; background: var(--surface2);
+    color: var(--text-dim); font-size: .75rem; font-weight: 700;
+    letter-spacing: .05em; text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+  .swap-table td { padding: .8rem 1.1rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .swap-table tr:last-child td { border-bottom: none; }
+  .swap-table code {
+    font-family: "SFMono-Regular", Consolas, monospace; font-size: .82rem;
+    color: var(--clay-dark); background: var(--clay-soft);
+    padding: .1rem .4rem; border-radius: 4px;
+  }
+  .pill-shared { color: var(--green); font-weight: 700; }
+  .pill-switched { color: var(--clay-dark); font-weight: 700; }
+  .how-note {
+    background: var(--clay-soft); border-left: 3px solid var(--clay);
+    padding: .9rem 1.1rem; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    font-size: .875rem; color: var(--text); margin-top: 1.5rem; line-height: 1.7;
+  }
+  .how-note strong { color: var(--clay-dark); }
+
+  /* ── Steps ── */
+  .steps-section { padding: 4rem 0; border-top: 1px solid var(--border); }
+  .steps-tabs {
+    display: flex; gap: .5rem;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: .35rem;
+    width: fit-content; margin: 0 auto 2.5rem;
+    box-shadow: 0 1px 3px rgba(42,39,34,.04);
+  }
+  .steps-tab {
+    padding: .45rem 1.4rem; border-radius: var(--radius-sm);
+    border: none; cursor: pointer; font-size: .875rem; font-weight: 600;
+    color: var(--text-dim); background: transparent; transition: all .2s;
+  }
+  .steps-tab.active { background: var(--clay); color: #fff; }
+  .steps-panel { display: none; }
+  .steps-panel.active { display: block; }
+
+  .step {
+    display: flex; gap: 1.25rem;
+    margin-bottom: 2rem; align-items: flex-start;
+  }
+  .step-num {
+    flex-shrink: 0;
+    width: 34px; height: 34px;
+    background: var(--clay); color: #fff;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: .85rem;
+  }
+  .step-body { flex: 1; min-width: 0; }
+  .step-body h4 { font-size: 1rem; font-weight: 700; margin-bottom: .5rem; }
+  .step-body p { font-size: .875rem; color: var(--text-dim); margin-bottom: .75rem; }
+  .step-note {
+    background: var(--clay-soft); border-left: 3px solid var(--clay);
+    padding: .6rem 1rem; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    font-size: .8rem; color: var(--text-dim); margin-top: .5rem;
+  }
+  .step-note strong { color: var(--text); }
+
+  /* ── Code blocks ── */
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden; margin-top: .5rem;
+  }
+  .code-block-header {
+    background: var(--code-surface); padding: .5rem 1rem;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--code-border);
+    font-size: .75rem; color: var(--code-out); gap: .5rem;
+  }
+  .code-block code {
+    display: block; padding: .9rem 1rem;
+    font-family: "SFMono-Regular", "Cascadia Code", Consolas, monospace;
+    font-size: .825rem; color: var(--code-text); line-height: 1.7;
+    white-space: pre; overflow-x: auto;
+  }
+  .hl-prompt { color: var(--code-prompt); }
+  .hl-cmd    { color: var(--code-cmd); }
+  .hl-arg    { color: var(--code-arg); }
+  .hl-out    { color: var(--code-out); }
+
+  /* ── Demo box ── */
+  .demo-box {
+    background: var(--code-bg); border: 1px solid var(--code-border);
+    border-radius: var(--radius); overflow: hidden; margin-top: 2rem;
+    box-shadow: 0 8px 30px rgba(42,39,34,.12);
+  }
+  .demo-box-header {
+    background: var(--code-surface); padding: .6rem 1rem;
+    display: flex; align-items: center; gap: .75rem;
+    border-bottom: 1px solid var(--code-border);
+  }
+  .demo-title { font-size: .8rem; color: var(--code-out); }
+  .demo-body {
+    padding: 1.2rem 1.4rem;
+    font-family: "SFMono-Regular", "Cascadia Code", Consolas, monospace;
+    font-size: .82rem; line-height: 1.9; color: var(--code-text);
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .demo-prompt { color: var(--code-prompt); }
+  .demo-cmd { color: var(--code-cmd); }
+  .demo-cur { color: var(--code-arg); }
+  .demo-out { color: var(--code-out); }
+  .demo-ok  { color: var(--green); }
+
+  /* ── Commands table ── */
+  .commands-section { padding: 4rem 0; border-top: 1px solid var(--border); }
+  .cmd-table {
+    width: 100%; border-collapse: collapse;
+    font-size: .875rem;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .cmd-table th {
+    text-align: left; padding: .7rem 1rem;
+    background: var(--surface2); color: var(--text-dim);
+    font-size: .75rem; font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; border-bottom: 1px solid var(--border);
+  }
+  .cmd-table td { padding: .75rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .cmd-table tr:last-child td { border-bottom: none; }
+  .cmd-table tr:hover td { background: var(--surface2); }
+  .cmd-table code {
+    font-family: "SFMono-Regular", "Cascadia Code", Consolas, monospace;
+    font-size: .8rem; color: var(--clay-dark);
+    background: var(--clay-soft);
+    padding: .15rem .4rem; border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  /* ── FAQ ── */
+  .faq-section { padding: 4rem 0; border-top: 1px solid var(--border); }
+  details {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); margin-bottom: .75rem;
+    transition: border-color .2s;
+  }
+  details[open] { border-color: var(--clay); }
+  summary {
+    padding: 1rem 1.25rem; cursor: pointer;
+    font-weight: 600; font-size: .9rem;
+    list-style: none; display: flex; justify-content: space-between; align-items: center;
+    gap: 1rem;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; color: var(--text-dim); font-size: 1.2rem; font-weight: 400; flex-shrink: 0; }
+  details[open] summary::after { content: "\2212"; color: var(--clay); }
+  .faq-body {
+    padding: 0 1.25rem 1rem;
+    font-size: .875rem; color: var(--text-dim); line-height: 1.7;
+  }
+  .faq-body p + p { margin-top: .5rem; }
+  .faq-body code {
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: .8rem; color: var(--clay-dark);
+    background: var(--clay-soft);
+    padding: .1rem .35rem; border-radius: 4px;
+  }
+  .faq-pre {
+    background: var(--code-bg); padding: .75rem 1rem;
+    border-radius: 6px; margin: .5rem 0;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: .8rem; color: var(--code-text);
+    overflow-x: auto; white-space: pre;
+  }
+
+  /* ── Footer ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 2.5rem 1.5rem; text-align: center;
+    color: var(--text-dim); font-size: .825rem;
+  }
+  footer a { color: var(--clay-dark); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* ── Responsive ── */
+  @media (max-width: 700px) {
+    nav { padding: 0 1rem; }
+    .nav-links { gap: .75rem; }
+    .nav-links a { font-size: .8rem; }
+  }
+  @media (max-width: 520px) {
+    .nav-links { display: none; }
+    .hero { padding: 3.5rem 1rem 3rem; }
+    .hero-sub { font-size: .9rem; }
+    .os-tabs, .steps-tabs { width: 100%; }
+    .os-tab, .steps-tab {
+      flex: 1; text-align: center; padding: .45rem .5rem; font-size: .82rem;
+    }
+    .install-code { font-size: .75rem; padding: .9rem 1rem; }
+    .cards { grid-template-columns: 1fr; }
+    .step { gap: .75rem; }
+    .step-num { width: 28px; height: 28px; font-size: .78rem; }
+    .demo-body { font-size: .72rem; padding: 1rem; }
+    .cmd-table, .swap-table { font-size: .82rem; }
+    .cmd-table td, .cmd-table th, .swap-table td, .swap-table th { padding: .6rem .75rem; }
+    .container { padding: 0 1rem; }
+    .features, .how-section, .steps-section, .commands-section, .faq-section { padding: 3rem 0; }
+    .section-title { margin-bottom: 1.75rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <a class="nav-brand" href="#"><span>Claude</span> Auth Switcher</a>
+  <div class="nav-links">
+    <a href="#install">安裝</a>
+    <a href="#how">原理</a>
+    <a href="#commands">指令</a>
+    <a href="#faq">FAQ</a>
+    <a href="https://github.com/yazelin/claude-auth-switcher" target="_blank">GitHub</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-badge">免費開源工具</div>
+  <h1>在一台電腦上<br>管理<em>多個 Claude 帳號</em></h1>
+  <p class="hero-sub">
+    儲存多個 Claude Code 訂閱帳號，一個指令即時切換，不會掉訂閱、不需重新登入。<br>
+    設定、MCP、技能、歷史全部共用。支援 Windows、Linux、macOS。
+  </p>
+
+  <div id="install" class="os-tabs">
+    <button class="os-tab active" onclick="switchOS('win', this)">Windows</button>
+    <button class="os-tab" onclick="switchOS('linux', this)">Linux / macOS</button>
+  </div>
+
+  <div id="panel-win" class="os-panel active">
+    <div class="install-box">
+      <div class="install-box-header">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span>PowerShell</span>
+        <button class="copy-btn" onclick="copyInstall('win', this)">複製</button>
+      </div>
+      <div class="install-code"><span class="prompt">PS&gt; </span><span class="cmd">irm</span> <span class="url">https://raw.githubusercontent.com/yazelin/claude-auth-switcher/main/install-oneliner.ps1</span> | iex</div>
+    </div>
+  </div>
+
+  <div id="panel-linux" class="os-panel">
+    <div class="install-box">
+      <div class="install-box-header">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span>bash / zsh</span>
+        <button class="copy-btn" onclick="copyInstall('linux', this)">複製</button>
+      </div>
+      <div class="install-code"><span class="prompt">$ </span><span class="cmd">bash</span> &lt;(<span class="cmd">curl</span> -fsSL <span class="url">https://raw.githubusercontent.com/yazelin/claude-auth-switcher/main/install-oneliner.sh</span>)</div>
+    </div>
+  </div>
+
+  <p class="hero-note">需要先安裝 Git（Linux/macOS 另需 <code style="font-family:monospace">jq</code>、<code style="font-family:monospace">curl</code>）。沒有 Git？<a href="#faq-git" style="color:var(--clay-dark)">點這裡看安裝方法</a></p>
+</section>
+
+<!-- Features -->
+<section class="features">
+  <div class="container">
+    <div class="section-label">為什麼需要它</div>
+    <div class="section-title">解決 Claude 多帳號的痛點</div>
+    <div class="cards">
+      <div class="card">
+        <div class="card-tag">儲存</div>
+        <h3>多個帳號登入狀態</h3>
+        <p>把每個 Claude 帳號的登入權杖分別存成獨立 profile，個人、公司帳號互不干擾。</p>
+      </div>
+      <div class="card">
+        <div class="card-tag">切換</div>
+        <h3>一個指令即時切換</h3>
+        <p><code>cl switch</code> 開選單、選好按 Enter，自動先關掉正在跑的 Claude，再換帳號。</p>
+      </div>
+      <div class="card">
+        <div class="card-tag">不掉訂閱</div>
+        <h3>維持訂閱計費</h3>
+        <p>切換時連帶換掉訂閱身分，Claude Code 仍走你的 Pro / Max 訂閱，不會偷偷掉成 API 計費。</p>
+      </div>
+      <div class="card">
+        <div class="card-tag">共用</div>
+        <h3>設定與歷史完全共用</h3>
+        <p>MCP token、設定、對話歷史、技能、外掛通通共用，只有帳號權杖會切換，其他不受影響。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section class="how-section" id="how">
+  <div class="container">
+    <div class="section-label">運作原理</div>
+    <div class="section-title">切換時，到底換了什麼？</div>
+    <div style="overflow-x:auto">
+    <table class="swap-table">
+      <thead>
+        <tr><th>項目</th><th>位置</th><th>切換 / 共用</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>帳號權杖 <code>claudeAiOauth</code></td><td><code>~/.claude/.credentials.json</code></td><td><span class="pill-switched">每個帳號切換</span></td></tr>
+        <tr><td>訂閱身分 <code>oauthAccount</code></td><td><code>~/.claude.json</code></td><td><span class="pill-switched">每個帳號切換</span></td></tr>
+        <tr><td>MCP token <code>mcpOAuth</code></td><td><code>~/.claude/.credentials.json</code></td><td><span class="pill-shared">共用</span></td></tr>
+        <tr><td>設定、對話歷史、技能、外掛</td><td><code>~/.claude/</code></td><td><span class="pill-shared">共用</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="how-note">
+      Claude 的帳號身分其實藏在<strong>兩個檔案</strong>裡：權杖在 <code>.credentials.json</code>，訂閱身分在 <code>~/.claude.json</code>。
+      只換其中一個，Claude Code 會把它當成不一致而<strong>退回 API 計費</strong>。<code>cl</code> 會同時換好這兩塊，所以切換後仍然吃你的訂閱額度。過期權杖也會在切換時自動更新。
+    </div>
+  </div>
+</section>
+
+<!-- Steps -->
+<section class="steps-section">
+  <div class="container">
+    <div class="section-label">操作步驟</div>
+    <div class="section-title">從安裝到第一次切換</div>
+
+    <div class="steps-tabs">
+      <button class="steps-tab active" onclick="switchSteps('win', this)">Windows</button>
+      <button class="steps-tab" onclick="switchSteps('linux', this)">Linux / macOS</button>
+    </div>
+
+    <!-- Windows Steps -->
+    <div id="steps-win" class="steps-panel active">
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>開啟 PowerShell，貼上安裝指令</h4>
+          <p>按 <strong>Win + X</strong>，選「終端機」或「Windows PowerShell」，將以下指令完整複製貼上（Ctrl+V），按 Enter。</p>
+          <div class="code-block">
+            <div class="code-block-header">
+              <span>PowerShell</span>
+              <button class="copy-btn" onclick="copyCode(this, 'irm https://raw.githubusercontent.com/yazelin/claude-auth-switcher/main/install-oneliner.ps1 | iex')">複製</button>
+            </div>
+            <code><span class="hl-prompt">PS&gt; </span><span class="hl-cmd">irm</span> https://raw.githubusercontent.com/yazelin/claude-auth-switcher/main/install-oneliner.ps1 | iex</code>
+          </div>
+          <p style="margin-top:.75rem;font-size:.875rem;color:var(--text-dim)">安裝會自動接好 Windows PowerShell 5.1 與 PowerShell 7 兩個設定檔，並印出後續步驟。裝完請重開一個 PowerShell 視窗。</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>儲存你目前的 Claude 帳號</h4>
+          <p>如果電腦已經登入過 Claude Code，執行這行把現有登入狀態存成叫「personal」的 profile：</p>
+          <div class="code-block">
+            <div class="code-block-header"><span>PowerShell</span><button class="copy-btn" onclick="copyCode(this, 'cl import personal')">複製</button></div>
+            <code><span class="hl-prompt">PS&gt; </span><span class="hl-cmd">cl import</span> <span class="hl-arg">personal</span></code>
+          </div>
+          <p style="margin-top:.75rem;font-size:.875rem;color:var(--text-dim)">「personal」只是名稱，換成你自己看得懂的暱稱也可以。</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>新增第二個帳號</h4>
+          <p>執行 <code style="font-family:monospace;color:var(--clay-dark)">cl login</code> 加上名稱，會開啟瀏覽器 OAuth 登入流程，登入完成後自動存成 profile：</p>
+          <div class="code-block">
+            <div class="code-block-header"><span>PowerShell</span><button class="copy-btn" onclick="copyCode(this, 'cl login company')">複製</button></div>
+            <code><span class="hl-prompt">PS&gt; </span><span class="hl-cmd">cl login</span> <span class="hl-arg">company</span>
+<span class="hl-out"># 登入完成後，company profile 就儲存好了</span></code>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h4>查看所有帳號狀態</h4>
+          <div class="code-block">
+            <div class="code-block-header"><span>PowerShell</span><button class="copy-btn" onclick="copyCode(this, 'cl list')">複製</button></div>
+            <code><span class="hl-prompt">PS&gt; </span><span class="hl-cmd">cl list</span>
+<span class="hl-out">CURRENT  PROFILE      EMAIL                  PLAN   USAGE
+*        personal     ya***@gmail.com        max    5h 42% used @14:00 | wk 18% used
+         company      ya***@company.com      pro    5h 7% used         | wk 55% used</span></code>
+          </div>
+          <p style="margin-top:.75rem;font-size:.875rem;color:var(--text-dim)"><code style="font-family:monospace;color:var(--clay-dark)">*</code> 號是目前使用中的帳號；email 會遮罩；百分比是<strong>已用量</strong>（5 小時 / 每週）。</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <h4>切換帳號</h4>
+          <p>用互動選單切換，會自動先關掉正在跑的 Claude，再換帳號：</p>
+          <div class="code-block">
+            <div class="code-block-header"><span>PowerShell</span><button class="copy-btn" onclick="copyCode(this, 'cl switch')">複製</button></div>
+            <code><span class="hl-prompt">PS&gt; </span><span class="hl-cmd">cl switch</span></code>
+          </div>
+          <div class="step-note">
+            <strong>或直接指定：</strong><code style="font-family:monospace">cl use company</code> &nbsp;—&nbsp; 切換後直接開 <code style="font-family:monospace">claude</code> 即可，不需要任何 wrapper。
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /steps-win -->
+
+    <!-- Linux Steps -->
+    <div id="steps-linux" class="steps-panel">
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>開啟終端機，貼上安裝指令</h4>
+          <p>需要先有 <code style="font-family:monospace;color:var(--clay-dark)">git</code>、<code style="font-family:monospace;color:var(--clay-dark)">jq</code>、<code style="font-family:monospace;color:var(--clay-dark)">curl</code>。</p>
+          <div class="code-block">
+            <div class="code-block-header"><span>bash / zsh</span><button class="copy-btn" onclick="copyCode(this, 'bash <(curl -fsSL https://raw.githubusercontent.com/yazelin/claude-auth-switcher/main/install-oneliner.sh)')">複製</button></div>
+            <code><span class="hl-prompt">$ </span><span class="hl-cmd">bash</span> &lt;(<span class="hl-cmd">curl</span> -fsSL https://raw.githubusercontent.com/yazelin/claude-auth-switcher/main/install-oneliner.sh)</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>重新載入 shell（或開新終端機）</h4>
+          <div class="code-block">
+            <div class="code-block-header"><span>bash</span><button class="copy-btn" onclick="copyCode(this, 'source ~/.bashrc')">複製</button></div>
+            <code><span class="hl-prompt">$ </span><span class="hl-cmd">source</span> ~/.bashrc
+<span class="hl-out"># zsh 用戶請改為：source ~/.zshrc</span></code>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>儲存現有帳號、新增更多帳號</h4>
+          <div class="code-block">
+            <div class="code-block-header"><span>bash</span><button class="copy-btn" onclick="copyCode(this, 'cl import personal\ncl login company')">複製</button></div>
+            <code><span class="hl-prompt">$ </span><span class="hl-cmd">cl import</span> <span class="hl-arg">personal</span>   <span class="hl-out"># 儲存現有帳號</span>
+<span class="hl-prompt">$ </span><span class="hl-cmd">cl login</span>  <span class="hl-arg">company</span>    <span class="hl-out"># 瀏覽器 OAuth 新增第二個帳號</span></code>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h4>切換帳號</h4>
+          <div class="code-block">
+            <div class="code-block-header"><span>bash</span><button class="copy-btn" onclick="copyCode(this, 'cl use company')">複製</button></div>
+            <code><span class="hl-prompt">$ </span><span class="hl-cmd">cl use</span> <span class="hl-arg">company</span>   <span class="hl-out"># 切換到 company 帳號（會先關掉正在跑的 claude）</span>
+<span class="hl-prompt">$ </span><span class="hl-cmd">claude</span>            <span class="hl-out"># 照常啟動 Claude Code</span></code>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /steps-linux -->
+
+  </div>
+</section>
+
+<!-- usage table demo -->
+<section style="padding:0 0 2rem">
+  <div class="container">
+    <div class="section-label">多帳號用量比較</div>
+    <div class="section-title">cl usage --all 並排比較</div>
+    <div class="demo-box">
+      <div class="demo-box-header">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="demo-title">PowerShell / bash — cl usage --all</span>
+      </div>
+      <div class="demo-body"><span class="demo-prompt">PS&gt; </span><span class="demo-cmd">cl usage --all</span>
+<span class="demo-out">CURRENT  PROFILE      EMAIL                  PLAN   USAGE</span>
+<span class="demo-cur">*</span>        personal     ya***@gmail.com        max    5h 42% used @14:00 | wk 18% used
+         company      ya***@company.com      pro    5h 7% used         | wk 55% used</div>
+    </div>
+    <p style="text-align:center;font-size:.825rem;color:var(--text-dim);margin-top:1rem">
+      <code style="font-family:monospace">--all</code> 會先即時更新每個帳號的用量，再用同一張表格並排呈現 — 一眼比較哪個帳號還有額度。
+    </p>
+  </div>
+</section>
+
+<!-- cl switch demo -->
+<section style="padding:0 0 4rem">
+  <div class="container">
+    <div class="section-label">互動切換介面</div>
+    <div class="section-title">cl switch 實際樣子</div>
+    <div class="demo-box">
+      <div class="demo-box-header">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="demo-title">PowerShell / bash — cl switch</span>
+      </div>
+      <div class="demo-body"><span class="demo-prompt">PS&gt; </span><span class="demo-cmd">cl switch</span>
+<span class="demo-out">select a profile:</span>
+  1) personal
+  2) company
+<span class="demo-out">choice: </span>2
+<span class="demo-out">killed 1 running claude process(es) before switching</span>
+<span class="demo-ok">switched to 'company'</span></div>
+    </div>
+    <p style="text-align:center;font-size:.825rem;color:var(--text-dim);margin-top:1rem">
+      輸入數字選帳號 → Enter。切換前會自動關掉正在運行的 Claude，避免它把舊帳號權杖寫回來。
+    </p>
+  </div>
+</section>
+
+<!-- Commands -->
+<section class="commands-section" id="commands">
+  <div class="container">
+    <div class="section-label">完整指令列表</div>
+    <div class="section-title">所有 cl 指令</div>
+    <div style="overflow-x:auto">
+    <table class="cmd-table">
+      <thead>
+        <tr><th>指令</th><th>功能說明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>cl login &lt;名稱&gt;</code></td><td>開啟瀏覽器 OAuth 新增帳號，存成新 profile</td></tr>
+        <tr><td><code>cl import &lt;名稱&gt;</code></td><td>把目前 <code>~/.claude</code> 的登入狀態存成 profile</td></tr>
+        <tr><td><code>cl use &lt;名稱&gt;</code></td><td>切換 active 帳號（會先關掉正在跑的 claude）</td></tr>
+        <tr><td><code>cl switch</code></td><td>互動選單切換帳號，一樣會先關 claude</td></tr>
+        <tr><td><code>cl kill</code></td><td>立即關閉所有正在運行的 claude 程序</td></tr>
+        <tr><td><code>cl list</code></td><td>表格列出所有帳號：使用中標記、email（遮罩）、訂閱、快取用量</td></tr>
+        <tr><td><code>cl usage [name|--all]</code></td><td>即時用量；<code>--all</code> 更新全部並印出並排比較表，單一帳號顯示詳細分項</td></tr>
+        <tr><td><code>cl current</code></td><td>顯示目前使用中的 profile 名稱</td></tr>
+        <tr><td><code>cl remove &lt;名稱&gt;</code></td><td>刪除一個 profile</td></tr>
+        <tr><td><code>cl ps</code></td><td>列出偵測到的 claude 程序（排除本 session）</td></tr>
+        <tr><td><code>cl doctor</code></td><td>診斷：路徑、claude 程序狀態、profile 概覽</td></tr>
+        <tr><td><code>cl export &lt;檔名&gt;</code></td><td>備份所有 profile（Windows <code>.zip</code> / Linux <code>.tgz</code>）</td></tr>
+        <tr><td><code>cl restore &lt;檔名&gt;</code></td><td>從備份檔還原 profile</td></tr>
+        <tr><td><code>cl help</code></td><td>顯示內建指令說明</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq-section" id="faq">
+  <div class="container">
+    <div class="section-label">常見問題</div>
+    <div class="section-title">FAQ</div>
+
+    <details id="faq-git">
+      <summary>沒有安裝 Git，要怎麼辦？</summary>
+      <div class="faq-body">
+        <p><strong>Windows：</strong>在 PowerShell 輸入：</p>
+        <div class="faq-pre">winget install --id Git.Git -e --source winget</div>
+        <p>安裝完後關掉 PowerShell 再重開，就有 git 了。</p>
+        <p style="margin-top:.75rem"><strong>Linux（Ubuntu/Debian）：</strong></p>
+        <div class="faq-pre">sudo apt install git jq curl</div>
+        <p><strong>macOS：</strong>在終端機輸入 <code>git</code>，macOS 會提示安裝 Command Line Tools；<code>jq</code> 可用 <code>brew install jq</code>。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>執行安裝指令時出現「執行原則」錯誤？</summary>
+      <div class="faq-body">
+        <p>Windows 有時會封鎖 PowerShell 腳本。先執行這行解除限制，再重貼安裝指令：</p>
+        <div class="faq-pre">Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser</div>
+      </div>
+    </details>
+
+    <details>
+      <summary>cl 指令在新開的 PowerShell 視窗裡不能用？</summary>
+      <div class="faq-body">
+        <p>安裝會把設定加到你的 PowerShell profile，需要<strong>重新開啟</strong> PowerShell 才生效。安裝程式已同時接好 Windows PowerShell 5.1 與 PowerShell 7 兩個設定檔。</p>
+        <p>還是不行的話，確認 profile 裡有這行：</p>
+        <div class="faq-pre">notepad $PROFILE</div>
+        <p>裡面應該有一行 <code>. "C:\Users\你的名字\claude-auth-switcher\shell\powershell.ps1"</code>。沒有的話手動加上去存檔，再重開 PowerShell。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>切換後 Claude 還是舊帳號 / 沒生效？</summary>
+      <div class="faq-body">
+        <p>最常見原因是切換時還有 Claude 在跑——正在運行的 session 會在下一次呼叫 API 時把自己的舊權杖寫回去，蓋掉切換結果。</p>
+        <p><code>cl use</code> 和 <code>cl switch</code> 預設都會<strong>先關掉</strong>正在跑的 claude 再切換，所以照正常用法就不會踩到。若你手動加了 <code>--no-kill</code>，記得先自己關掉 Claude。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>切換後會不會掉訂閱、變成 API 計費？</summary>
+      <div class="faq-body">
+        <p>不會。Claude 的帳號身分分散在兩個檔案：權杖在 <code>~/.claude/.credentials.json</code>，訂閱身分（<code>oauthAccount</code>）在 <code>~/.claude.json</code>。</p>
+        <p><code>cl</code> 切換時會<strong>同時換好這兩塊</strong>，所以 Claude Code 仍然走你的 Pro / Max 訂閱。如果某個 profile 是用舊版工具存的、缺少訂閱身分，重新 <code>cl import &lt;名稱&gt;</code> 一次即可補上。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>用量百分比是「已用」還是「剩餘」？</summary>
+      <div class="faq-body">
+        <p>顯示的是<strong>已用量</strong>。例如 <code>5h 42% used</code> 代表這個 5 小時視窗已經用掉 42%。單一帳號的 <code>cl usage &lt;名稱&gt;</code> 會再列出每週、週-opus、週-sonnet 分項與重置時間。</p>
+        <p>（這點和姊妹專案 codex-auth-switcher 相反——Codex 顯示的是剩餘量。）</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>權杖安全嗎？會上傳到雲端嗎？</summary>
+      <div class="faq-body">
+        <p>不會。所有權杖只存在你自己電腦的 <code>~/.claude_auth_profiles/</code> 資料夾裡，工具完全在本機運行。Unix 上 profile 目錄會設成 <code>700</code>、檔案 <code>600</code>。</p>
+        <p>請勿把 <code>~/.claude_auth_profiles/</code> 或 <code>cl export</code> 出來的備份檔 commit 到 Git；備份檔含長期權杖，傳完請刪除。</p>
+      </div>
+    </details>
+
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <p>
+    <a href="https://github.com/yazelin/claude-auth-switcher" target="_blank">github.com/yazelin/claude-auth-switcher</a>
+    &nbsp;·&nbsp; MIT License &nbsp;·&nbsp;
+    姊妹專案 <a href="https://github.com/yazelin/codex-auth-switcher" target="_blank">codex-auth-switcher</a>
+  </p>
+  <p style="margin-top:.5rem;font-size:.75rem">
+    有 bug 或建議？請到 GitHub 開 <a href="https://github.com/yazelin/claude-auth-switcher/issues" target="_blank">Issue</a>
+  </p>
+</footer>
+
+<script>
+  function switchOS(os, btn) {
+    document.querySelectorAll('.os-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.os-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + os).classList.add('active');
+  }
+
+  function switchSteps(os, btn) {
+    document.querySelectorAll('.steps-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.steps-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('steps-' + os).classList.add('active');
+  }
+
+  var installCmds = {
+    win:   'irm https://raw.githubusercontent.com/yazelin/claude-auth-switcher/main/install-oneliner.ps1 | iex',
+    linux: 'bash <(curl -fsSL https://raw.githubusercontent.com/yazelin/claude-auth-switcher/main/install-oneliner.sh)'
+  };
+
+  function copyInstall(os, btn) {
+    navigator.clipboard.writeText(installCmds[os]).then(function() {
+      btn.textContent = '已複製';
+      btn.classList.add('copied');
+      setTimeout(function() { btn.textContent = '複製'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+
+  function copyCode(btn, text) {
+    navigator.clipboard.writeText(text).then(function() {
+      btn.textContent = '已複製';
+      btn.classList.add('copied');
+      setTimeout(function() { btn.textContent = '複製'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+
+  if (!navigator.platform.toLowerCase().includes('win')) {
+    document.querySelectorAll('.os-tab')[1].click();
+    document.querySelectorAll('.steps-tab')[1].click();
+  }
+</script>
+</body>
+</html>
