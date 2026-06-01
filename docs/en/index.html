@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Claude Auth Switcher — 多帳號切換工具</title>
-<meta name="description" content="在一台電腦上管理多個 Claude Code 訂閱帳號，一個指令即時切換，不會掉訂閱、不需重新登入。支援 Windows、Linux、macOS。">
+<title>Claude Auth Switcher — Multi-Account Switcher for Claude Code</title>
+<meta name="description" content="Manage multiple Claude Code subscription accounts on one machine. Switch instantly with one command — no re-login, and you never lose your subscription. Works on Windows, Linux, and macOS.">
 <link rel="alternate" hreflang="zh-Hant" href="https://yazelin.github.io/claude-auth-switcher/">
 <link rel="alternate" hreflang="en" href="https://yazelin.github.io/claude-auth-switcher/en/">
 <link rel="alternate" hreflang="ja" href="https://yazelin.github.io/claude-auth-switcher/ja/">
@@ -431,27 +431,27 @@
   <a class="nav-brand" href="#"><span>Claude</span> Auth Switcher</a>
   <div class="nav-right">
     <div class="nav-links">
-      <a href="#install">安裝</a>
-      <a href="#how">原理</a>
-      <a href="#commands">指令</a>
+      <a href="#install">Install</a>
+      <a href="#how">How it works</a>
+      <a href="#commands">Commands</a>
       <a href="#faq">FAQ</a>
       <a href="https://github.com/yazelin/claude-auth-switcher" target="_blank">GitHub</a>
     </div>
     <div class="lang-switch">
-      <a href="./" class="active">中文</a>
-      <a href="en/">EN</a>
-      <a href="ja/">日本語</a>
+      <a href="../">中文</a>
+      <a href="./" class="active">EN</a>
+      <a href="../ja/">日本語</a>
     </div>
   </div>
 </nav>
 
 <!-- Hero -->
 <section class="hero">
-  <div class="hero-badge">免費開源工具</div>
-  <h1>在一台電腦上<br>管理<em>多個 Claude 帳號</em></h1>
+  <div class="hero-badge">FREE &amp; OPEN SOURCE</div>
+  <h1>Manage <em>multiple Claude accounts</em><br>on one machine</h1>
   <p class="hero-sub">
-    儲存多個 Claude Code 訂閱帳號，一個指令即時切換，不會掉訂閱、不需重新登入。<br>
-    設定、MCP、技能、歷史全部共用。支援 Windows、Linux、macOS。
+    Save several Claude Code subscription accounts and switch between them instantly with one command — no losing your subscription, no re-login.<br>
+    Settings, MCP, skills, and history are all shared. Works on Windows, Linux, and macOS.
   </p>
 
   <div id="install" class="os-tabs">
@@ -464,7 +464,7 @@
       <div class="install-box-header">
         <div class="dots"><span></span><span></span><span></span></div>
         <span>PowerShell</span>
-        <button class="copy-btn" onclick="copyInstall('win', this)">複製</button>
+        <button class="copy-btn" onclick="copyInstall('win', this)">Copy</button>
       </div>
       <div class="install-code"><span class="prompt">PS&gt; </span><span class="cmd">irm</span> <span class="url">https://raw.githubusercontent.com/yazelin/claude-auth-switcher/main/install-oneliner.ps1</span> | iex</div>
     </div>
@@ -475,40 +475,40 @@
       <div class="install-box-header">
         <div class="dots"><span></span><span></span><span></span></div>
         <span>bash / zsh</span>
-        <button class="copy-btn" onclick="copyInstall('linux', this)">複製</button>
+        <button class="copy-btn" onclick="copyInstall('linux', this)">Copy</button>
       </div>
       <div class="install-code"><span class="prompt">$ </span><span class="cmd">bash</span> &lt;(<span class="cmd">curl</span> -fsSL <span class="url">https://raw.githubusercontent.com/yazelin/claude-auth-switcher/main/install-oneliner.sh</span>)</div>
     </div>
   </div>
 
-  <p class="hero-note">需要先安裝 Git（Linux/macOS 另需 <code style="font-family:monospace">jq</code>、<code style="font-family:monospace">curl</code>）。沒有 Git？<a href="#faq-git" style="color:var(--clay-dark)">點這裡看安裝方法</a></p>
+  <p class="hero-note">Requires Git first (Linux/macOS also need <code style="font-family:monospace">jq</code> and <code style="font-family:monospace">curl</code>). No Git? <a href="#faq-git" style="color:var(--clay-dark)">See how to install it here</a></p>
 </section>
 
 <!-- Features -->
 <section class="features">
   <div class="container">
-    <div class="section-label">為什麼需要它</div>
-    <div class="section-title">解決 Claude 多帳號的痛點</div>
+    <div class="section-label">Why you need it</div>
+    <div class="section-title">Solving the multi-account pain on Claude</div>
     <div class="cards">
       <div class="card">
-        <div class="card-tag">儲存</div>
-        <h3>多個帳號登入狀態</h3>
-        <p>把每個 Claude 帳號的登入權杖分別存成獨立 profile，個人、公司帳號互不干擾。</p>
+        <div class="card-tag">SAVE</div>
+        <h3>Multiple login states</h3>
+        <p>Save each Claude account's login token as its own separate profile, so your personal and company accounts never interfere with each other.</p>
       </div>
       <div class="card">
-        <div class="card-tag">切換</div>
-        <h3>一個指令即時切換</h3>
-        <p><code>cl switch</code> 開選單、選好按 Enter，自動先關掉正在跑的 Claude，再換帳號。</p>
+        <div class="card-tag">SWITCH</div>
+        <h3>Instant switch with one command</h3>
+        <p><code>cl switch</code> opens a menu — pick one, hit Enter, and it kills the running Claude first, then switches accounts.</p>
       </div>
       <div class="card">
-        <div class="card-tag">不掉訂閱</div>
-        <h3>維持訂閱計費</h3>
-        <p>切換時連帶換掉訂閱身分，Claude Code 仍走你的 Pro / Max 訂閱，不會偷偷掉成 API 計費。</p>
+        <div class="card-tag">KEEP YOUR SUB</div>
+        <h3>Stay on subscription billing</h3>
+        <p>Switching swaps your subscription identity too, so Claude Code stays on your Pro / Max subscription and never quietly drops to API billing.</p>
       </div>
       <div class="card">
-        <div class="card-tag">共用</div>
-        <h3>設定與歷史完全共用</h3>
-        <p>MCP token、設定、對話歷史、技能、外掛通通共用，只有帳號權杖會切換，其他不受影響。</p>
+        <div class="card-tag">SHARED</div>
+        <h3>Settings and history fully shared</h3>
+        <p>MCP tokens, settings, conversation history, skills, and plugins are all shared — only the account token switches, nothing else is affected.</p>
       </div>
     </div>
   </div>
@@ -517,24 +517,24 @@
 <!-- How it works -->
 <section class="how-section" id="how">
   <div class="container">
-    <div class="section-label">運作原理</div>
-    <div class="section-title">切換時，到底換了什麼？</div>
+    <div class="section-label">How it works</div>
+    <div class="section-title">What actually changes when you switch?</div>
     <div style="overflow-x:auto">
     <table class="swap-table">
       <thead>
-        <tr><th>項目</th><th>位置</th><th>切換 / 共用</th></tr>
+        <tr><th>Item</th><th>Location</th><th>Switched / Shared</th></tr>
       </thead>
       <tbody>
-        <tr><td>帳號權杖 <code>claudeAiOauth</code></td><td><code>~/.claude/.credentials.json</code></td><td><span class="pill-switched">每個帳號切換</span></td></tr>
-        <tr><td>訂閱身分 <code>oauthAccount</code></td><td><code>~/.claude.json</code></td><td><span class="pill-switched">每個帳號切換</span></td></tr>
-        <tr><td>MCP token <code>mcpOAuth</code></td><td><code>~/.claude/.credentials.json</code></td><td><span class="pill-shared">共用</span></td></tr>
-        <tr><td>設定、對話歷史、技能、外掛</td><td><code>~/.claude/</code></td><td><span class="pill-shared">共用</span></td></tr>
+        <tr><td>Account token <code>claudeAiOauth</code></td><td><code>~/.claude/.credentials.json</code></td><td><span class="pill-switched">switched per account</span></td></tr>
+        <tr><td>Subscription identity <code>oauthAccount</code></td><td><code>~/.claude.json</code></td><td><span class="pill-switched">switched per account</span></td></tr>
+        <tr><td>MCP token <code>mcpOAuth</code></td><td><code>~/.claude/.credentials.json</code></td><td><span class="pill-shared">shared</span></td></tr>
+        <tr><td>Settings, conversation history, skills, plugins</td><td><code>~/.claude/</code></td><td><span class="pill-shared">shared</span></td></tr>
       </tbody>
     </table>
     </div>
     <div class="how-note">
-      Claude 的帳號身分其實藏在<strong>兩個檔案</strong>裡：權杖在 <code>.credentials.json</code>，訂閱身分在 <code>~/.claude.json</code>。
-      只換其中一個，Claude Code 會把它當成不一致而<strong>退回 API 計費</strong>。<code>cl</code> 會同時換好這兩塊，所以切換後仍然吃你的訂閱額度。過期權杖也會在切換時自動更新。
+      Your Claude account identity actually lives in <strong>two files</strong>: the token in <code>.credentials.json</code>, and the subscription identity in <code>~/.claude.json</code>.
+      Swap only one of them and Claude Code treats it as a mismatch and <strong>falls back to API billing</strong>. <code>cl</code> rewrites both blocks together, so after switching you still draw on your subscription quota. Expired tokens are also refreshed automatically on switch.
     </div>
   </div>
 </section>
@@ -542,8 +542,8 @@
 <!-- Steps -->
 <section class="steps-section">
   <div class="container">
-    <div class="section-label">操作步驟</div>
-    <div class="section-title">從安裝到第一次切換</div>
+    <div class="section-label">Step by step</div>
+    <div class="section-title">From install to your first switch</div>
 
     <div class="steps-tabs">
       <button class="steps-tab active" onclick="switchSteps('win', this)">Windows</button>
@@ -556,41 +556,41 @@
       <div class="step">
         <div class="step-num">1</div>
         <div class="step-body">
-          <h4>開啟 PowerShell，貼上安裝指令</h4>
-          <p>按 <strong>Win + X</strong>，選「終端機」或「Windows PowerShell」，將以下指令完整複製貼上（Ctrl+V），按 Enter。</p>
+          <h4>Open PowerShell and paste the install command</h4>
+          <p>Press <strong>Win + X</strong>, choose "Terminal" or "Windows PowerShell", copy and paste the command below in full (Ctrl+V), and press Enter.</p>
           <div class="code-block">
             <div class="code-block-header">
               <span>PowerShell</span>
-              <button class="copy-btn" onclick="copyCode(this, 'irm https://raw.githubusercontent.com/yazelin/claude-auth-switcher/main/install-oneliner.ps1 | iex')">複製</button>
+              <button class="copy-btn" onclick="copyCode(this, 'irm https://raw.githubusercontent.com/yazelin/claude-auth-switcher/main/install-oneliner.ps1 | iex')">Copy</button>
             </div>
             <code><span class="hl-prompt">PS&gt; </span><span class="hl-cmd">irm</span> https://raw.githubusercontent.com/yazelin/claude-auth-switcher/main/install-oneliner.ps1 | iex</code>
           </div>
-          <p style="margin-top:.75rem;font-size:.875rem;color:var(--text-dim)">安裝會自動接好 Windows PowerShell 5.1 與 PowerShell 7 兩個設定檔，並印出後續步驟。裝完請重開一個 PowerShell 視窗。</p>
+          <p style="margin-top:.75rem;font-size:.875rem;color:var(--text-dim)">The install automatically wires up both your Windows PowerShell 5.1 and PowerShell 7 profiles and prints the next steps. When it's done, open a fresh PowerShell window.</p>
         </div>
       </div>
 
       <div class="step">
         <div class="step-num">2</div>
         <div class="step-body">
-          <h4>儲存你目前的 Claude 帳號</h4>
-          <p>如果電腦已經登入過 Claude Code，執行這行把現有登入狀態存成叫「personal」的 profile：</p>
+          <h4>Save your current Claude account</h4>
+          <p>If your machine is already logged into Claude Code, run this line to save the existing login as a profile called "personal":</p>
           <div class="code-block">
-            <div class="code-block-header"><span>PowerShell</span><button class="copy-btn" onclick="copyCode(this, 'cl import personal')">複製</button></div>
+            <div class="code-block-header"><span>PowerShell</span><button class="copy-btn" onclick="copyCode(this, 'cl import personal')">Copy</button></div>
             <code><span class="hl-prompt">PS&gt; </span><span class="hl-cmd">cl import</span> <span class="hl-arg">personal</span></code>
           </div>
-          <p style="margin-top:.75rem;font-size:.875rem;color:var(--text-dim)">「personal」只是名稱，換成你自己看得懂的暱稱也可以。</p>
+          <p style="margin-top:.75rem;font-size:.875rem;color:var(--text-dim)">"personal" is just a name — feel free to use any nickname that makes sense to you.</p>
         </div>
       </div>
 
       <div class="step">
         <div class="step-num">3</div>
         <div class="step-body">
-          <h4>新增第二個帳號</h4>
-          <p>執行 <code style="font-family:monospace;color:var(--clay-dark)">cl login</code> 加上名稱，會開啟瀏覽器 OAuth 登入流程，登入完成後自動存成 profile：</p>
+          <h4>Add a second account</h4>
+          <p>Run <code style="font-family:monospace;color:var(--clay-dark)">cl login</code> with a name to open the browser OAuth login flow; once you finish logging in it's saved as a profile automatically:</p>
           <div class="code-block">
-            <div class="code-block-header"><span>PowerShell</span><button class="copy-btn" onclick="copyCode(this, 'cl login company')">複製</button></div>
+            <div class="code-block-header"><span>PowerShell</span><button class="copy-btn" onclick="copyCode(this, 'cl login company')">Copy</button></div>
             <code><span class="hl-prompt">PS&gt; </span><span class="hl-cmd">cl login</span> <span class="hl-arg">company</span>
-<span class="hl-out"># 登入完成後，company profile 就儲存好了</span></code>
+<span class="hl-out"># once login finishes, the company profile is saved</span></code>
           </div>
         </div>
       </div>
@@ -598,29 +598,29 @@
       <div class="step">
         <div class="step-num">4</div>
         <div class="step-body">
-          <h4>查看所有帳號狀態</h4>
+          <h4>View the status of all accounts</h4>
           <div class="code-block">
-            <div class="code-block-header"><span>PowerShell</span><button class="copy-btn" onclick="copyCode(this, 'cl list')">複製</button></div>
+            <div class="code-block-header"><span>PowerShell</span><button class="copy-btn" onclick="copyCode(this, 'cl list')">Copy</button></div>
             <code><span class="hl-prompt">PS&gt; </span><span class="hl-cmd">cl list</span>
 <span class="hl-out">CURRENT  PROFILE      EMAIL                  PLAN   USAGE
 *        personal     ya***@gmail.com        max    5h 42% used @14:00 | wk 18% used @06/02
          company      ya***@company.com      pro    5h 7% used @09:00 | wk 55% used @06/05</span></code>
           </div>
-          <p style="margin-top:.75rem;font-size:.875rem;color:var(--text-dim)"><code style="font-family:monospace;color:var(--clay-dark)">*</code> 號是目前使用中的帳號；email 會遮罩；百分比是<strong>已用量</strong>（5 小時 / 每週）。</p>
+          <p style="margin-top:.75rem;font-size:.875rem;color:var(--text-dim)">The <code style="font-family:monospace;color:var(--clay-dark)">*</code> marks the account currently in use; emails are masked; the percentages are <strong>amount used</strong> (5-hour / weekly).</p>
         </div>
       </div>
 
       <div class="step">
         <div class="step-num">5</div>
         <div class="step-body">
-          <h4>切換帳號</h4>
-          <p>用互動選單切換，會自動先關掉正在跑的 Claude，再換帳號：</p>
+          <h4>Switch accounts</h4>
+          <p>Switch with the interactive menu — it kills the running Claude first, then switches accounts:</p>
           <div class="code-block">
-            <div class="code-block-header"><span>PowerShell</span><button class="copy-btn" onclick="copyCode(this, 'cl switch')">複製</button></div>
+            <div class="code-block-header"><span>PowerShell</span><button class="copy-btn" onclick="copyCode(this, 'cl switch')">Copy</button></div>
             <code><span class="hl-prompt">PS&gt; </span><span class="hl-cmd">cl switch</span></code>
           </div>
           <div class="step-note">
-            <strong>或直接指定：</strong><code style="font-family:monospace">cl use company</code> &nbsp;—&nbsp; 切換後直接開 <code style="font-family:monospace">claude</code> 即可，不需要任何 wrapper。
+            <strong>Or specify directly:</strong> <code style="font-family:monospace">cl use company</code> &nbsp;—&nbsp; after switching just launch <code style="font-family:monospace">claude</code>, no wrapper needed.
           </div>
         </div>
       </div>
@@ -633,10 +633,10 @@
       <div class="step">
         <div class="step-num">1</div>
         <div class="step-body">
-          <h4>開啟終端機，貼上安裝指令</h4>
-          <p>需要先有 <code style="font-family:monospace;color:var(--clay-dark)">git</code>、<code style="font-family:monospace;color:var(--clay-dark)">jq</code>、<code style="font-family:monospace;color:var(--clay-dark)">curl</code>。</p>
+          <h4>Open a terminal and paste the install command</h4>
+          <p>You'll need <code style="font-family:monospace;color:var(--clay-dark)">git</code>, <code style="font-family:monospace;color:var(--clay-dark)">jq</code>, and <code style="font-family:monospace;color:var(--clay-dark)">curl</code> first.</p>
           <div class="code-block">
-            <div class="code-block-header"><span>bash / zsh</span><button class="copy-btn" onclick="copyCode(this, 'bash <(curl -fsSL https://raw.githubusercontent.com/yazelin/claude-auth-switcher/main/install-oneliner.sh)')">複製</button></div>
+            <div class="code-block-header"><span>bash / zsh</span><button class="copy-btn" onclick="copyCode(this, 'bash <(curl -fsSL https://raw.githubusercontent.com/yazelin/claude-auth-switcher/main/install-oneliner.sh)')">Copy</button></div>
             <code><span class="hl-prompt">$ </span><span class="hl-cmd">bash</span> &lt;(<span class="hl-cmd">curl</span> -fsSL https://raw.githubusercontent.com/yazelin/claude-auth-switcher/main/install-oneliner.sh)</code>
           </div>
         </div>
@@ -645,11 +645,11 @@
       <div class="step">
         <div class="step-num">2</div>
         <div class="step-body">
-          <h4>重新載入 shell（或開新終端機）</h4>
+          <h4>Reload your shell (or open a new terminal)</h4>
           <div class="code-block">
-            <div class="code-block-header"><span>bash</span><button class="copy-btn" onclick="copyCode(this, 'source ~/.bashrc')">複製</button></div>
+            <div class="code-block-header"><span>bash</span><button class="copy-btn" onclick="copyCode(this, 'source ~/.bashrc')">Copy</button></div>
             <code><span class="hl-prompt">$ </span><span class="hl-cmd">source</span> ~/.bashrc
-<span class="hl-out"># zsh 用戶請改為：source ~/.zshrc</span></code>
+<span class="hl-out"># zsh users: use source ~/.zshrc instead</span></code>
           </div>
         </div>
       </div>
@@ -657,11 +657,11 @@
       <div class="step">
         <div class="step-num">3</div>
         <div class="step-body">
-          <h4>儲存現有帳號、新增更多帳號</h4>
+          <h4>Save your current account and add more</h4>
           <div class="code-block">
-            <div class="code-block-header"><span>bash</span><button class="copy-btn" onclick="copyCode(this, 'cl import personal\ncl login company')">複製</button></div>
-            <code><span class="hl-prompt">$ </span><span class="hl-cmd">cl import</span> <span class="hl-arg">personal</span>   <span class="hl-out"># 儲存現有帳號</span>
-<span class="hl-prompt">$ </span><span class="hl-cmd">cl login</span>  <span class="hl-arg">company</span>    <span class="hl-out"># 瀏覽器 OAuth 新增第二個帳號</span></code>
+            <div class="code-block-header"><span>bash</span><button class="copy-btn" onclick="copyCode(this, 'cl import personal\ncl login company')">Copy</button></div>
+            <code><span class="hl-prompt">$ </span><span class="hl-cmd">cl import</span> <span class="hl-arg">personal</span>   <span class="hl-out"># save the current account</span>
+<span class="hl-prompt">$ </span><span class="hl-cmd">cl login</span>  <span class="hl-arg">company</span>    <span class="hl-out"># add a second account via browser OAuth</span></code>
           </div>
         </div>
       </div>
@@ -669,11 +669,11 @@
       <div class="step">
         <div class="step-num">4</div>
         <div class="step-body">
-          <h4>切換帳號</h4>
+          <h4>Switch accounts</h4>
           <div class="code-block">
-            <div class="code-block-header"><span>bash</span><button class="copy-btn" onclick="copyCode(this, 'cl use company')">複製</button></div>
-            <code><span class="hl-prompt">$ </span><span class="hl-cmd">cl use</span> <span class="hl-arg">company</span>   <span class="hl-out"># 切換到 company 帳號（會先關掉正在跑的 claude）</span>
-<span class="hl-prompt">$ </span><span class="hl-cmd">claude</span>            <span class="hl-out"># 照常啟動 Claude Code</span></code>
+            <div class="code-block-header"><span>bash</span><button class="copy-btn" onclick="copyCode(this, 'cl use company')">Copy</button></div>
+            <code><span class="hl-prompt">$ </span><span class="hl-cmd">cl use</span> <span class="hl-arg">company</span>   <span class="hl-out"># switch to the company account (kills running claude first)</span>
+<span class="hl-prompt">$ </span><span class="hl-cmd">claude</span>            <span class="hl-out"># launch Claude Code as usual</span></code>
           </div>
         </div>
       </div>
@@ -686,8 +686,8 @@
 <!-- usage table demo -->
 <section style="padding:0 0 2rem">
   <div class="container">
-    <div class="section-label">多帳號用量比較</div>
-    <div class="section-title">cl usage 並排比較</div>
+    <div class="section-label">Compare usage across accounts</div>
+    <div class="section-title">cl usage side-by-side</div>
     <div class="demo-box">
       <div class="demo-box-header">
         <div class="dots"><span></span><span></span><span></span></div>
@@ -699,7 +699,7 @@
          company      ya***@company.com      pro    5h 7% used @09:00 | wk 55% used @06/05</div>
     </div>
     <p style="text-align:center;font-size:.825rem;color:var(--text-dim);margin-top:1rem">
-      <code style="font-family:monospace">cl usage</code> 不帶參數就會即時更新<strong>每個帳號</strong>的用量並排成表（等同 <code style="font-family:monospace">--all</code>）— 一眼比較哪個帳號還有額度。重置時間顯示為你的本地時間（台灣 UTC+8）。
+      <code style="font-family:monospace">cl usage</code> with no arguments refreshes the usage of <strong>every account</strong> live and lines them up in a table (equivalent to <code style="font-family:monospace">--all</code>) — so you can see at a glance which account still has quota. Reset times are shown in your local time (Taiwan UTC+8).
     </p>
   </div>
 </section>
@@ -707,8 +707,8 @@
 <!-- cl switch demo -->
 <section style="padding:0 0 4rem">
   <div class="container">
-    <div class="section-label">互動切換介面</div>
-    <div class="section-title">cl switch 實際樣子</div>
+    <div class="section-label">Interactive switcher</div>
+    <div class="section-title">What cl switch looks like</div>
     <div class="demo-box">
       <div class="demo-box-header">
         <div class="dots"><span></span><span></span><span></span></div>
@@ -723,7 +723,7 @@
 <span class="demo-ok">switched to 'company'</span></div>
     </div>
     <p style="text-align:center;font-size:.825rem;color:var(--text-dim);margin-top:1rem">
-      輸入數字選帳號 → Enter。切換前會自動關掉正在運行的 Claude，避免它把舊帳號權杖寫回來。
+      Type a number to pick an account, then Enter. Before switching it automatically kills any running Claude, so it can't write the old account's token back.
     </p>
   </div>
 </section>
@@ -731,28 +731,28 @@
 <!-- Commands -->
 <section class="commands-section" id="commands">
   <div class="container">
-    <div class="section-label">完整指令列表</div>
-    <div class="section-title">所有 cl 指令</div>
+    <div class="section-label">Full command list</div>
+    <div class="section-title">All cl commands</div>
     <div style="overflow-x:auto">
     <table class="cmd-table">
       <thead>
-        <tr><th>指令</th><th>功能說明</th></tr>
+        <tr><th>Command</th><th>What it does</th></tr>
       </thead>
       <tbody>
-        <tr><td><code>cl login &lt;名稱&gt;</code></td><td>開啟瀏覽器 OAuth 新增帳號，存成新 profile</td></tr>
-        <tr><td><code>cl import &lt;名稱&gt;</code></td><td>把目前 <code>~/.claude</code> 的登入狀態存成 profile</td></tr>
-        <tr><td><code>cl use &lt;名稱&gt;</code></td><td>切換 active 帳號（會先關掉正在跑的 claude）</td></tr>
-        <tr><td><code>cl switch</code></td><td>互動選單切換帳號，一樣會先關 claude</td></tr>
-        <tr><td><code>cl kill</code></td><td>立即關閉所有正在運行的 claude 程序</td></tr>
-        <tr><td><code>cl list</code></td><td>表格列出所有帳號：使用中標記、email（遮罩）、訂閱、快取用量</td></tr>
-        <tr><td><code>cl usage [name|--all]</code></td><td>全部帳號即時用量並排表（不帶參數=全部）；單一帳號顯示詳細分項</td></tr>
-        <tr><td><code>cl current</code></td><td>顯示目前使用中的 profile 名稱</td></tr>
-        <tr><td><code>cl remove &lt;名稱&gt;</code></td><td>刪除一個 profile</td></tr>
-        <tr><td><code>cl ps</code></td><td>列出偵測到的 claude 程序（排除本 session）</td></tr>
-        <tr><td><code>cl doctor</code></td><td>診斷：路徑、claude 程序狀態、profile 概覽</td></tr>
-        <tr><td><code>cl export &lt;檔名&gt;</code></td><td>備份所有 profile（Windows <code>.zip</code> / Linux <code>.tgz</code>）</td></tr>
-        <tr><td><code>cl restore &lt;檔名&gt;</code></td><td>從備份檔還原 profile</td></tr>
-        <tr><td><code>cl help</code></td><td>顯示內建指令說明</td></tr>
+        <tr><td><code>cl login &lt;name&gt;</code></td><td>Open browser OAuth to add an account and save it as a new profile</td></tr>
+        <tr><td><code>cl import &lt;name&gt;</code></td><td>Save the current login state in <code>~/.claude</code> as a profile</td></tr>
+        <tr><td><code>cl use &lt;name&gt;</code></td><td>Switch the active account (kills running claude first)</td></tr>
+        <tr><td><code>cl switch</code></td><td>Switch accounts via an interactive menu, also killing claude first</td></tr>
+        <tr><td><code>cl kill</code></td><td>Immediately kill all running claude processes</td></tr>
+        <tr><td><code>cl list</code></td><td>List all accounts in a table: active marker, email (masked), plan, cached usage</td></tr>
+        <tr><td><code>cl usage [name|--all]</code></td><td>Live usage table for all accounts side by side (no argument = all); a single account shows the detailed breakdown</td></tr>
+        <tr><td><code>cl current</code></td><td>Show the name of the profile currently in use</td></tr>
+        <tr><td><code>cl remove &lt;name&gt;</code></td><td>Delete a profile</td></tr>
+        <tr><td><code>cl ps</code></td><td>List detected claude processes (excludes this session)</td></tr>
+        <tr><td><code>cl doctor</code></td><td>Diagnostics: paths, claude process state, profile overview</td></tr>
+        <tr><td><code>cl export &lt;file&gt;</code></td><td>Back up all profiles (Windows <code>.zip</code> / Linux <code>.tgz</code>)</td></tr>
+        <tr><td><code>cl restore &lt;file&gt;</code></td><td>Restore profiles from a backup archive</td></tr>
+        <tr><td><code>cl help</code></td><td>Show the built-in command help</td></tr>
       </tbody>
     </table>
     </div>
@@ -762,68 +762,68 @@
 <!-- FAQ -->
 <section class="faq-section" id="faq">
   <div class="container">
-    <div class="section-label">常見問題</div>
+    <div class="section-label">Frequently asked questions</div>
     <div class="section-title">FAQ</div>
 
     <details id="faq-git">
-      <summary>沒有安裝 Git，要怎麼辦？</summary>
+      <summary>I don't have Git installed — what do I do?</summary>
       <div class="faq-body">
-        <p><strong>Windows：</strong>在 PowerShell 輸入：</p>
+        <p><strong>Windows:</strong> in PowerShell, type:</p>
         <div class="faq-pre">winget install --id Git.Git -e --source winget</div>
-        <p>安裝完後關掉 PowerShell 再重開，就有 git 了。</p>
-        <p style="margin-top:.75rem"><strong>Linux（Ubuntu/Debian）：</strong></p>
+        <p>After it installs, close PowerShell and reopen it, and you'll have git.</p>
+        <p style="margin-top:.75rem"><strong>Linux (Ubuntu/Debian):</strong></p>
         <div class="faq-pre">sudo apt install git jq curl</div>
-        <p><strong>macOS：</strong>在終端機輸入 <code>git</code>，macOS 會提示安裝 Command Line Tools；<code>jq</code> 可用 <code>brew install jq</code>。</p>
+        <p><strong>macOS:</strong> type <code>git</code> in the terminal and macOS will prompt you to install the Command Line Tools; <code>jq</code> can be installed with <code>brew install jq</code>.</p>
       </div>
     </details>
 
     <details>
-      <summary>執行安裝指令時出現「執行原則」錯誤？</summary>
+      <summary>I get an "execution policy" error when running the install command?</summary>
       <div class="faq-body">
-        <p>Windows 有時會封鎖 PowerShell 腳本。先執行這行解除限制，再重貼安裝指令：</p>
+        <p>Windows sometimes blocks PowerShell scripts. Run this line first to lift the restriction, then paste the install command again:</p>
         <div class="faq-pre">Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser</div>
       </div>
     </details>
 
     <details>
-      <summary>cl 指令在新開的 PowerShell 視窗裡不能用？</summary>
+      <summary>The cl command doesn't work in a newly opened PowerShell window?</summary>
       <div class="faq-body">
-        <p>安裝會把設定加到你的 PowerShell profile，需要<strong>重新開啟</strong> PowerShell 才生效。安裝程式已同時接好 Windows PowerShell 5.1 與 PowerShell 7 兩個設定檔。</p>
-        <p>還是不行的話，確認 profile 裡有這行：</p>
+        <p>The install adds the setup to your PowerShell profile, so you need to <strong>reopen</strong> PowerShell for it to take effect. The installer already wires up both your Windows PowerShell 5.1 and PowerShell 7 profiles.</p>
+        <p>If it still doesn't work, check that your profile contains this line:</p>
         <div class="faq-pre">notepad $PROFILE</div>
-        <p>裡面應該有一行 <code>. "C:\Users\你的名字\claude-auth-switcher\shell\powershell.ps1"</code>。沒有的話手動加上去存檔，再重開 PowerShell。</p>
+        <p>It should contain a line like <code>. "C:\Users\YourName\claude-auth-switcher\shell\powershell.ps1"</code>. If it's missing, add it manually, save, and reopen PowerShell.</p>
       </div>
     </details>
 
     <details>
-      <summary>切換後 Claude 還是舊帳號 / 沒生效？</summary>
+      <summary>After switching, Claude is still on the old account / nothing changed?</summary>
       <div class="faq-body">
-        <p>最常見原因是切換時還有 Claude 在跑——正在運行的 session 會在下一次呼叫 API 時把自己的舊權杖寫回去，蓋掉切換結果。</p>
-        <p><code>cl use</code> 和 <code>cl switch</code> 預設都會<strong>先關掉</strong>正在跑的 claude 再切換，所以照正常用法就不會踩到。若你手動加了 <code>--no-kill</code>，記得先自己關掉 Claude。</p>
+        <p>The most common cause is that Claude was still running during the switch — a running session writes its old token back on its next API call, overwriting the switch.</p>
+        <p><code>cl use</code> and <code>cl switch</code> both <strong>kill</strong> any running claude before switching by default, so normal usage won't hit this. If you added <code>--no-kill</code> yourself, remember to close Claude first.</p>
       </div>
     </details>
 
     <details>
-      <summary>切換後會不會掉訂閱、變成 API 計費？</summary>
+      <summary>Will switching lose my subscription and drop me to API billing?</summary>
       <div class="faq-body">
-        <p>不會。Claude 的帳號身分分散在兩個檔案：權杖在 <code>~/.claude/.credentials.json</code>，訂閱身分（<code>oauthAccount</code>）在 <code>~/.claude.json</code>。</p>
-        <p><code>cl</code> 切換時會<strong>同時換好這兩塊</strong>，所以 Claude Code 仍然走你的 Pro / Max 訂閱。如果某個 profile 是用舊版工具存的、缺少訂閱身分，重新 <code>cl import &lt;名稱&gt;</code> 一次即可補上。</p>
+        <p>No. Your Claude account identity is spread across two files: the token in <code>~/.claude/.credentials.json</code>, and the subscription identity (<code>oauthAccount</code>) in <code>~/.claude.json</code>.</p>
+        <p><code>cl</code> rewrites <strong>both blocks together</strong> when switching, so Claude Code stays on your Pro / Max subscription. If a profile was saved with an older version of the tool and is missing the subscription identity, just run <code>cl import &lt;name&gt;</code> again to restore it.</p>
       </div>
     </details>
 
     <details>
-      <summary>用量百分比是「已用」還是「剩餘」？</summary>
+      <summary>Is the usage percentage "used" or "remaining"?</summary>
       <div class="faq-body">
-        <p>顯示的是<strong>已用量</strong>。例如 <code>5h 42% used</code> 代表這個 5 小時視窗已經用掉 42%。單一帳號的 <code>cl usage &lt;名稱&gt;</code> 會再列出每週、週-opus、週-sonnet 分項與重置時間。</p>
-        <p>（這點和姊妹專案 codex-auth-switcher 相反——Codex 顯示的是剩餘量。）</p>
+        <p>It shows the <strong>amount used</strong>. For example, <code>5h 42% used</code> means this 5-hour window is already 42% consumed. For a single account, <code>cl usage &lt;name&gt;</code> also lists the weekly, weekly-opus, and weekly-sonnet breakdowns along with reset times.</p>
+        <p>(This is the opposite of the sibling project codex-auth-switcher — Codex shows the remaining amount.)</p>
       </div>
     </details>
 
     <details>
-      <summary>權杖安全嗎？會上傳到雲端嗎？</summary>
+      <summary>Are the tokens safe? Do they get uploaded to the cloud?</summary>
       <div class="faq-body">
-        <p>不會。所有權杖只存在你自己電腦的 <code>~/.claude_auth_profiles/</code> 資料夾裡，工具完全在本機運行。Unix 上 profile 目錄會設成 <code>700</code>、檔案 <code>600</code>。</p>
-        <p>請勿把 <code>~/.claude_auth_profiles/</code> 或 <code>cl export</code> 出來的備份檔 commit 到 Git；備份檔含長期權杖，傳完請刪除。</p>
+        <p>No. All tokens are stored only in the <code>~/.claude_auth_profiles/</code> folder on your own machine, and the tool runs entirely locally. On Unix the profile directory is set to <code>700</code> and the files to <code>600</code>.</p>
+        <p>Don't commit <code>~/.claude_auth_profiles/</code> or the backups produced by <code>cl export</code> to Git; the backup files contain long-lived tokens, so delete them after transferring.</p>
       </div>
     </details>
 
@@ -835,10 +835,10 @@
   <p>
     <a href="https://github.com/yazelin/claude-auth-switcher" target="_blank">github.com/yazelin/claude-auth-switcher</a>
     &nbsp;·&nbsp; MIT License &nbsp;·&nbsp;
-    姊妹專案 <a href="https://github.com/yazelin/codex-auth-switcher" target="_blank">codex-auth-switcher</a>
+    Sibling project <a href="https://github.com/yazelin/codex-auth-switcher" target="_blank">codex-auth-switcher</a>
   </p>
   <p style="margin-top:.5rem;font-size:.75rem">
-    有 bug 或建議？請到 GitHub 開 <a href="https://github.com/yazelin/claude-auth-switcher/issues" target="_blank">Issue</a>
+    Found a bug or have a suggestion? Open an <a href="https://github.com/yazelin/claude-auth-switcher/issues" target="_blank">Issue</a> on GitHub
   </p>
 </footer>
 
@@ -864,17 +864,17 @@
 
   function copyInstall(os, btn) {
     navigator.clipboard.writeText(installCmds[os]).then(function() {
-      btn.textContent = '已複製';
+      btn.textContent = 'Copied';
       btn.classList.add('copied');
-      setTimeout(function() { btn.textContent = '複製'; btn.classList.remove('copied'); }, 2000);
+      setTimeout(function() { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
     });
   }
 
   function copyCode(btn, text) {
     navigator.clipboard.writeText(text).then(function() {
-      btn.textContent = '已複製';
+      btn.textContent = 'Copied';
       btn.classList.add('copied');
-      setTimeout(function() { btn.textContent = '複製'; btn.classList.remove('copied'); }, 2000);
+      setTimeout(function() { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
     });
   }
 
