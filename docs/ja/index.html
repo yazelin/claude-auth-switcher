@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="ja">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Claude Auth Switcher — 多帳號切換工具</title>
-<meta name="description" content="在一台電腦上管理多個 Claude Code 訂閱帳號，一個指令即時切換，不會掉訂閱、不需重新登入。支援 Windows、Linux、macOS。">
+<title>Claude Auth Switcher — Claude Code 用マルチアカウント切り替えツール</title>
+<meta name="description" content="1台のPCで複数のClaude Codeサブスクリプションアカウントを管理し、1コマンドで即座に切り替え。再ログイン不要・サブスクが切れません。Windows、Linux、macOSに対応。">
 <link rel="alternate" hreflang="zh-Hant" href="https://yazelin.github.io/claude-auth-switcher/">
 <link rel="alternate" hreflang="en" href="https://yazelin.github.io/claude-auth-switcher/en/">
 <link rel="alternate" hreflang="ja" href="https://yazelin.github.io/claude-auth-switcher/ja/">
@@ -431,27 +431,27 @@
   <a class="nav-brand" href="#"><span>Claude</span> Auth Switcher</a>
   <div class="nav-right">
     <div class="nav-links">
-      <a href="#install">安裝</a>
-      <a href="#how">原理</a>
-      <a href="#commands">指令</a>
+      <a href="#install">インストール</a>
+      <a href="#how">仕組み</a>
+      <a href="#commands">コマンド</a>
       <a href="#faq">FAQ</a>
       <a href="https://github.com/yazelin/claude-auth-switcher" target="_blank">GitHub</a>
     </div>
     <div class="lang-switch">
-      <a href="./" class="active">中文</a>
-      <a href="en/">EN</a>
-      <a href="ja/">日本語</a>
+      <a href="../">中文</a>
+      <a href="../en/">EN</a>
+      <a href="./" class="active">日本語</a>
     </div>
   </div>
 </nav>
 
 <!-- Hero -->
 <section class="hero">
-  <div class="hero-badge">免費開源工具</div>
-  <h1>在一台電腦上<br>管理<em>多個 Claude 帳號</em></h1>
+  <div class="hero-badge">無料・オープンソース</div>
+  <h1>1台のPCで<br><em>複数の Claude アカウント</em>を管理</h1>
   <p class="hero-sub">
-    儲存多個 Claude Code 訂閱帳號，一個指令即時切換，不會掉訂閱、不需重新登入。<br>
-    設定、MCP、技能、歷史全部共用。支援 Windows、Linux、macOS。
+    複数の Claude Code サブスクリプションアカウントを保存し、1コマンドで即座に切り替え。サブスクが切れず、再ログインも不要。<br>
+    設定、MCP、スキル、履歴はすべて共有。Windows、Linux、macOS に対応。
   </p>
 
   <div id="install" class="os-tabs">
@@ -464,7 +464,7 @@
       <div class="install-box-header">
         <div class="dots"><span></span><span></span><span></span></div>
         <span>PowerShell</span>
-        <button class="copy-btn" onclick="copyInstall('win', this)">複製</button>
+        <button class="copy-btn" onclick="copyInstall('win', this)">コピー</button>
       </div>
       <div class="install-code"><span class="prompt">PS&gt; </span><span class="cmd">irm</span> <span class="url">https://raw.githubusercontent.com/yazelin/claude-auth-switcher/main/install-oneliner.ps1</span> | iex</div>
     </div>
@@ -475,40 +475,40 @@
       <div class="install-box-header">
         <div class="dots"><span></span><span></span><span></span></div>
         <span>bash / zsh</span>
-        <button class="copy-btn" onclick="copyInstall('linux', this)">複製</button>
+        <button class="copy-btn" onclick="copyInstall('linux', this)">コピー</button>
       </div>
       <div class="install-code"><span class="prompt">$ </span><span class="cmd">bash</span> &lt;(<span class="cmd">curl</span> -fsSL <span class="url">https://raw.githubusercontent.com/yazelin/claude-auth-switcher/main/install-oneliner.sh</span>)</div>
     </div>
   </div>
 
-  <p class="hero-note">需要先安裝 Git（Linux/macOS 另需 <code style="font-family:monospace">jq</code>、<code style="font-family:monospace">curl</code>）。沒有 Git？<a href="#faq-git" style="color:var(--clay-dark)">點這裡看安裝方法</a></p>
+  <p class="hero-note">事前に Git が必要です（Linux/macOS では <code style="font-family:monospace">jq</code>、<code style="font-family:monospace">curl</code> も必要）。Git がない場合は<a href="#faq-git" style="color:var(--clay-dark)">こちらのインストール方法をご覧ください</a></p>
 </section>
 
 <!-- Features -->
 <section class="features">
   <div class="container">
-    <div class="section-label">為什麼需要它</div>
-    <div class="section-title">解決 Claude 多帳號的痛點</div>
+    <div class="section-label">なぜ必要か</div>
+    <div class="section-title">Claude マルチアカウントの悩みを解決</div>
     <div class="cards">
       <div class="card">
-        <div class="card-tag">儲存</div>
-        <h3>多個帳號登入狀態</h3>
-        <p>把每個 Claude 帳號的登入權杖分別存成獨立 profile，個人、公司帳號互不干擾。</p>
+        <div class="card-tag">保存</div>
+        <h3>複数アカウントのログイン状態</h3>
+        <p>各 Claude アカウントのログイントークンを独立したプロファイルとして個別に保存。個人用と会社用のアカウントが互いに干渉しません。</p>
       </div>
       <div class="card">
-        <div class="card-tag">切換</div>
-        <h3>一個指令即時切換</h3>
-        <p><code>cl switch</code> 開選單、選好按 Enter，自動先關掉正在跑的 Claude，再換帳號。</p>
+        <div class="card-tag">切り替え</div>
+        <h3>1コマンドで即座に切り替え</h3>
+        <p><code>cl switch</code> でメニューを開き、選んで Enter を押すだけ。実行中の Claude を自動で終了してからアカウントを切り替えます。</p>
       </div>
       <div class="card">
-        <div class="card-tag">不掉訂閱</div>
-        <h3>維持訂閱計費</h3>
-        <p>切換時連帶換掉訂閱身分，Claude Code 仍走你的 Pro / Max 訂閱，不會偷偷掉成 API 計費。</p>
+        <div class="card-tag">サブスク維持</div>
+        <h3>サブスクリプション課金を維持</h3>
+        <p>切り替え時にサブスクリプションの身元も一緒に入れ替えるため、Claude Code は引き続き Pro / Max サブスクで動作し、密かに API 課金へ落ちることがありません。</p>
       </div>
       <div class="card">
-        <div class="card-tag">共用</div>
-        <h3>設定與歷史完全共用</h3>
-        <p>MCP token、設定、對話歷史、技能、外掛通通共用，只有帳號權杖會切換，其他不受影響。</p>
+        <div class="card-tag">共有</div>
+        <h3>設定と履歴を完全に共有</h3>
+        <p>MCP トークン、設定、会話履歴、スキル、プラグインはすべて共有。切り替わるのはアカウントトークンだけで、その他は影響を受けません。</p>
       </div>
     </div>
   </div>
@@ -517,24 +517,24 @@
 <!-- How it works -->
 <section class="how-section" id="how">
   <div class="container">
-    <div class="section-label">運作原理</div>
-    <div class="section-title">切換時，到底換了什麼？</div>
+    <div class="section-label">動作原理</div>
+    <div class="section-title">切り替え時、実際に何が入れ替わるのか？</div>
     <div style="overflow-x:auto">
     <table class="swap-table">
       <thead>
-        <tr><th>項目</th><th>位置</th><th>切換 / 共用</th></tr>
+        <tr><th>項目</th><th>場所</th><th>切り替え / 共有</th></tr>
       </thead>
       <tbody>
-        <tr><td>帳號權杖 <code>claudeAiOauth</code></td><td><code>~/.claude/.credentials.json</code></td><td><span class="pill-switched">每個帳號切換</span></td></tr>
-        <tr><td>訂閱身分 <code>oauthAccount</code></td><td><code>~/.claude.json</code></td><td><span class="pill-switched">每個帳號切換</span></td></tr>
-        <tr><td>MCP token <code>mcpOAuth</code></td><td><code>~/.claude/.credentials.json</code></td><td><span class="pill-shared">共用</span></td></tr>
-        <tr><td>設定、對話歷史、技能、外掛</td><td><code>~/.claude/</code></td><td><span class="pill-shared">共用</span></td></tr>
+        <tr><td>アカウントトークン <code>claudeAiOauth</code></td><td><code>~/.claude/.credentials.json</code></td><td><span class="pill-switched">アカウントごとに切り替え</span></td></tr>
+        <tr><td>サブスクリプションの身元 <code>oauthAccount</code></td><td><code>~/.claude.json</code></td><td><span class="pill-switched">アカウントごとに切り替え</span></td></tr>
+        <tr><td>MCP トークン <code>mcpOAuth</code></td><td><code>~/.claude/.credentials.json</code></td><td><span class="pill-shared">共有</span></td></tr>
+        <tr><td>設定、会話履歴、スキル、プラグイン</td><td><code>~/.claude/</code></td><td><span class="pill-shared">共有</span></td></tr>
       </tbody>
     </table>
     </div>
     <div class="how-note">
-      Claude 的帳號身分其實藏在<strong>兩個檔案</strong>裡：權杖在 <code>.credentials.json</code>，訂閱身分在 <code>~/.claude.json</code>。
-      只換其中一個，Claude Code 會把它當成不一致而<strong>退回 API 計費</strong>。<code>cl</code> 會同時換好這兩塊，所以切換後仍然吃你的訂閱額度。過期權杖也會在切換時自動更新。
+      Claude のアカウントの身元は、実は<strong>2つのファイル</strong>に隠れています。トークンは <code>.credentials.json</code>、サブスクリプションの身元は <code>~/.claude.json</code> にあります。
+      どちらか一方だけを入れ替えると、Claude Code はそれを不整合と見なして<strong>API 課金へフォールバック</strong>します。<code>cl</code> はこの2つを同時に入れ替えるため、切り替え後もサブスクリプションの利用枠が使われます。期限切れのトークンも切り替え時に自動で更新されます。
     </div>
   </div>
 </section>
@@ -542,8 +542,8 @@
 <!-- Steps -->
 <section class="steps-section">
   <div class="container">
-    <div class="section-label">操作步驟</div>
-    <div class="section-title">從安裝到第一次切換</div>
+    <div class="section-label">操作手順</div>
+    <div class="section-title">インストールから初めての切り替えまで</div>
 
     <div class="steps-tabs">
       <button class="steps-tab active" onclick="switchSteps('win', this)">Windows</button>
@@ -556,41 +556,41 @@
       <div class="step">
         <div class="step-num">1</div>
         <div class="step-body">
-          <h4>開啟 PowerShell，貼上安裝指令</h4>
-          <p>按 <strong>Win + X</strong>，選「終端機」或「Windows PowerShell」，將以下指令完整複製貼上（Ctrl+V），按 Enter。</p>
+          <h4>PowerShell を開いてインストールコマンドを貼り付ける</h4>
+          <p><strong>Win + X</strong> を押して「ターミナル」または「Windows PowerShell」を選び、以下のコマンドをそのままコピーして貼り付け（Ctrl+V）、Enter を押します。</p>
           <div class="code-block">
             <div class="code-block-header">
               <span>PowerShell</span>
-              <button class="copy-btn" onclick="copyCode(this, 'irm https://raw.githubusercontent.com/yazelin/claude-auth-switcher/main/install-oneliner.ps1 | iex')">複製</button>
+              <button class="copy-btn" onclick="copyCode(this, 'irm https://raw.githubusercontent.com/yazelin/claude-auth-switcher/main/install-oneliner.ps1 | iex')">コピー</button>
             </div>
             <code><span class="hl-prompt">PS&gt; </span><span class="hl-cmd">irm</span> https://raw.githubusercontent.com/yazelin/claude-auth-switcher/main/install-oneliner.ps1 | iex</code>
           </div>
-          <p style="margin-top:.75rem;font-size:.875rem;color:var(--text-dim)">安裝會自動接好 Windows PowerShell 5.1 與 PowerShell 7 兩個設定檔，並印出後續步驟。裝完請重開一個 PowerShell 視窗。</p>
+          <p style="margin-top:.75rem;font-size:.875rem;color:var(--text-dim)">インストーラーは Windows PowerShell 5.1 と PowerShell 7 の両方のプロファイルを自動で設定し、続く手順を表示します。完了後は PowerShell ウィンドウを開き直してください。</p>
         </div>
       </div>
 
       <div class="step">
         <div class="step-num">2</div>
         <div class="step-body">
-          <h4>儲存你目前的 Claude 帳號</h4>
-          <p>如果電腦已經登入過 Claude Code，執行這行把現有登入狀態存成叫「personal」的 profile：</p>
+          <h4>現在の Claude アカウントを保存する</h4>
+          <p>すでに Claude Code にログイン済みの場合、この一行を実行して現在のログイン状態を「personal」という名前のプロファイルとして保存します:</p>
           <div class="code-block">
-            <div class="code-block-header"><span>PowerShell</span><button class="copy-btn" onclick="copyCode(this, 'cl import personal')">複製</button></div>
+            <div class="code-block-header"><span>PowerShell</span><button class="copy-btn" onclick="copyCode(this, 'cl import personal')">コピー</button></div>
             <code><span class="hl-prompt">PS&gt; </span><span class="hl-cmd">cl import</span> <span class="hl-arg">personal</span></code>
           </div>
-          <p style="margin-top:.75rem;font-size:.875rem;color:var(--text-dim)">「personal」只是名稱，換成你自己看得懂的暱稱也可以。</p>
+          <p style="margin-top:.75rem;font-size:.875rem;color:var(--text-dim)">「personal」は単なる名前です。自分が分かりやすい呼び名に変えても構いません。</p>
         </div>
       </div>
 
       <div class="step">
         <div class="step-num">3</div>
         <div class="step-body">
-          <h4>新增第二個帳號</h4>
-          <p>執行 <code style="font-family:monospace;color:var(--clay-dark)">cl login</code> 加上名稱，會開啟瀏覽器 OAuth 登入流程，登入完成後自動存成 profile：</p>
+          <h4>2つ目のアカウントを追加する</h4>
+          <p><code style="font-family:monospace;color:var(--clay-dark)">cl login</code> に名前を付けて実行すると、ブラウザの OAuth ログインフローが開き、ログイン完了後に自動でプロファイルとして保存されます:</p>
           <div class="code-block">
-            <div class="code-block-header"><span>PowerShell</span><button class="copy-btn" onclick="copyCode(this, 'cl login company')">複製</button></div>
+            <div class="code-block-header"><span>PowerShell</span><button class="copy-btn" onclick="copyCode(this, 'cl login company')">コピー</button></div>
             <code><span class="hl-prompt">PS&gt; </span><span class="hl-cmd">cl login</span> <span class="hl-arg">company</span>
-<span class="hl-out"># 登入完成後，company profile 就儲存好了</span></code>
+<span class="hl-out"># ログインが完了すると、company プロファイルが保存されます</span></code>
           </div>
         </div>
       </div>
@@ -598,29 +598,29 @@
       <div class="step">
         <div class="step-num">4</div>
         <div class="step-body">
-          <h4>查看所有帳號狀態</h4>
+          <h4>すべてのアカウントの状態を確認する</h4>
           <div class="code-block">
-            <div class="code-block-header"><span>PowerShell</span><button class="copy-btn" onclick="copyCode(this, 'cl list')">複製</button></div>
+            <div class="code-block-header"><span>PowerShell</span><button class="copy-btn" onclick="copyCode(this, 'cl list')">コピー</button></div>
             <code><span class="hl-prompt">PS&gt; </span><span class="hl-cmd">cl list</span>
 <span class="hl-out">CURRENT  PROFILE      EMAIL                  PLAN   USAGE
 *        personal     ya***@gmail.com        max    5h 42% used @14:00 | wk 18% used @06/02
          company      ya***@company.com      pro    5h 7% used @09:00 | wk 55% used @06/05</span></code>
           </div>
-          <p style="margin-top:.75rem;font-size:.875rem;color:var(--text-dim)"><code style="font-family:monospace;color:var(--clay-dark)">*</code> 號是目前使用中的帳號；email 會遮罩；百分比是<strong>已用量</strong>（5 小時 / 每週）。</p>
+          <p style="margin-top:.75rem;font-size:.875rem;color:var(--text-dim)"><code style="font-family:monospace;color:var(--clay-dark)">*</code> 印は現在使用中のアカウントです。email はマスクされ、パーセンテージは<strong>使用済み量</strong>（5時間 / 週）を表します。</p>
         </div>
       </div>
 
       <div class="step">
         <div class="step-num">5</div>
         <div class="step-body">
-          <h4>切換帳號</h4>
-          <p>用互動選單切換，會自動先關掉正在跑的 Claude，再換帳號：</p>
+          <h4>アカウントを切り替える</h4>
+          <p>対話式メニューで切り替えます。実行中の Claude を自動で終了してからアカウントを切り替えます:</p>
           <div class="code-block">
-            <div class="code-block-header"><span>PowerShell</span><button class="copy-btn" onclick="copyCode(this, 'cl switch')">複製</button></div>
+            <div class="code-block-header"><span>PowerShell</span><button class="copy-btn" onclick="copyCode(this, 'cl switch')">コピー</button></div>
             <code><span class="hl-prompt">PS&gt; </span><span class="hl-cmd">cl switch</span></code>
           </div>
           <div class="step-note">
-            <strong>或直接指定：</strong><code style="font-family:monospace">cl use company</code> &nbsp;—&nbsp; 切換後直接開 <code style="font-family:monospace">claude</code> 即可，不需要任何 wrapper。
+            <strong>または直接指定:</strong><code style="font-family:monospace">cl use company</code> &nbsp;—&nbsp; 切り替え後はそのまま <code style="font-family:monospace">claude</code> を起動するだけ。ラッパーは一切不要です。
           </div>
         </div>
       </div>
@@ -633,10 +633,10 @@
       <div class="step">
         <div class="step-num">1</div>
         <div class="step-body">
-          <h4>開啟終端機，貼上安裝指令</h4>
-          <p>需要先有 <code style="font-family:monospace;color:var(--clay-dark)">git</code>、<code style="font-family:monospace;color:var(--clay-dark)">jq</code>、<code style="font-family:monospace;color:var(--clay-dark)">curl</code>。</p>
+          <h4>ターミナルを開いてインストールコマンドを貼り付ける</h4>
+          <p>事前に <code style="font-family:monospace;color:var(--clay-dark)">git</code>、<code style="font-family:monospace;color:var(--clay-dark)">jq</code>、<code style="font-family:monospace;color:var(--clay-dark)">curl</code> が必要です。</p>
           <div class="code-block">
-            <div class="code-block-header"><span>bash / zsh</span><button class="copy-btn" onclick="copyCode(this, 'bash <(curl -fsSL https://raw.githubusercontent.com/yazelin/claude-auth-switcher/main/install-oneliner.sh)')">複製</button></div>
+            <div class="code-block-header"><span>bash / zsh</span><button class="copy-btn" onclick="copyCode(this, 'bash <(curl -fsSL https://raw.githubusercontent.com/yazelin/claude-auth-switcher/main/install-oneliner.sh)')">コピー</button></div>
             <code><span class="hl-prompt">$ </span><span class="hl-cmd">bash</span> &lt;(<span class="hl-cmd">curl</span> -fsSL https://raw.githubusercontent.com/yazelin/claude-auth-switcher/main/install-oneliner.sh)</code>
           </div>
         </div>
@@ -645,11 +645,11 @@
       <div class="step">
         <div class="step-num">2</div>
         <div class="step-body">
-          <h4>重新載入 shell（或開新終端機）</h4>
+          <h4>シェルを再読み込みする（または新しいターミナルを開く）</h4>
           <div class="code-block">
-            <div class="code-block-header"><span>bash</span><button class="copy-btn" onclick="copyCode(this, 'source ~/.bashrc')">複製</button></div>
+            <div class="code-block-header"><span>bash</span><button class="copy-btn" onclick="copyCode(this, 'source ~/.bashrc')">コピー</button></div>
             <code><span class="hl-prompt">$ </span><span class="hl-cmd">source</span> ~/.bashrc
-<span class="hl-out"># zsh 用戶請改為：source ~/.zshrc</span></code>
+<span class="hl-out"># zsh をお使いの場合は source ~/.zshrc に変えてください</span></code>
           </div>
         </div>
       </div>
@@ -657,11 +657,11 @@
       <div class="step">
         <div class="step-num">3</div>
         <div class="step-body">
-          <h4>儲存現有帳號、新增更多帳號</h4>
+          <h4>現在のアカウントを保存し、さらにアカウントを追加する</h4>
           <div class="code-block">
-            <div class="code-block-header"><span>bash</span><button class="copy-btn" onclick="copyCode(this, 'cl import personal\ncl login company')">複製</button></div>
-            <code><span class="hl-prompt">$ </span><span class="hl-cmd">cl import</span> <span class="hl-arg">personal</span>   <span class="hl-out"># 儲存現有帳號</span>
-<span class="hl-prompt">$ </span><span class="hl-cmd">cl login</span>  <span class="hl-arg">company</span>    <span class="hl-out"># 瀏覽器 OAuth 新增第二個帳號</span></code>
+            <div class="code-block-header"><span>bash</span><button class="copy-btn" onclick="copyCode(this, 'cl import personal\ncl login company')">コピー</button></div>
+            <code><span class="hl-prompt">$ </span><span class="hl-cmd">cl import</span> <span class="hl-arg">personal</span>   <span class="hl-out"># 現在のアカウントを保存</span>
+<span class="hl-prompt">$ </span><span class="hl-cmd">cl login</span>  <span class="hl-arg">company</span>    <span class="hl-out"># ブラウザ OAuth で2つ目のアカウントを追加</span></code>
           </div>
         </div>
       </div>
@@ -669,11 +669,11 @@
       <div class="step">
         <div class="step-num">4</div>
         <div class="step-body">
-          <h4>切換帳號</h4>
+          <h4>アカウントを切り替える</h4>
           <div class="code-block">
-            <div class="code-block-header"><span>bash</span><button class="copy-btn" onclick="copyCode(this, 'cl use company')">複製</button></div>
-            <code><span class="hl-prompt">$ </span><span class="hl-cmd">cl use</span> <span class="hl-arg">company</span>   <span class="hl-out"># 切換到 company 帳號（會先關掉正在跑的 claude）</span>
-<span class="hl-prompt">$ </span><span class="hl-cmd">claude</span>            <span class="hl-out"># 照常啟動 Claude Code</span></code>
+            <div class="code-block-header"><span>bash</span><button class="copy-btn" onclick="copyCode(this, 'cl use company')">コピー</button></div>
+            <code><span class="hl-prompt">$ </span><span class="hl-cmd">cl use</span> <span class="hl-arg">company</span>   <span class="hl-out"># company アカウントに切り替え（先に実行中の claude を終了）</span>
+<span class="hl-prompt">$ </span><span class="hl-cmd">claude</span>            <span class="hl-out"># いつもどおり Claude Code を起動</span></code>
           </div>
         </div>
       </div>
@@ -686,8 +686,8 @@
 <!-- usage table demo -->
 <section style="padding:0 0 2rem">
   <div class="container">
-    <div class="section-label">多帳號用量比較</div>
-    <div class="section-title">cl usage 並排比較</div>
+    <div class="section-label">マルチアカウントの使用量比較</div>
+    <div class="section-title">cl usage で横並び比較</div>
     <div class="demo-box">
       <div class="demo-box-header">
         <div class="dots"><span></span><span></span><span></span></div>
@@ -699,7 +699,7 @@
          company      ya***@company.com      pro    5h 7% used @09:00 | wk 55% used @06/05</div>
     </div>
     <p style="text-align:center;font-size:.825rem;color:var(--text-dim);margin-top:1rem">
-      <code style="font-family:monospace">cl usage</code> 不帶參數就會即時更新<strong>每個帳號</strong>的用量並排成表（等同 <code style="font-family:monospace">--all</code>）— 一眼比較哪個帳號還有額度。重置時間顯示為你的本地時間（台灣 UTC+8）。
+      <code style="font-family:monospace">cl usage</code> を引数なしで実行すると、<strong>各アカウント</strong>の使用量をリアルタイムで更新して横並びの表にします（<code style="font-family:monospace">--all</code> と同じ）— どのアカウントにまだ余裕があるか一目で比較できます。リセット時刻はお使いのローカルタイム（台湾 UTC+8）で表示されます。
     </p>
   </div>
 </section>
@@ -707,8 +707,8 @@
 <!-- cl switch demo -->
 <section style="padding:0 0 4rem">
   <div class="container">
-    <div class="section-label">互動切換介面</div>
-    <div class="section-title">cl switch 實際樣子</div>
+    <div class="section-label">対話式切り替え画面</div>
+    <div class="section-title">cl switch の実際の様子</div>
     <div class="demo-box">
       <div class="demo-box-header">
         <div class="dots"><span></span><span></span><span></span></div>
@@ -723,7 +723,7 @@
 <span class="demo-ok">switched to 'company'</span></div>
     </div>
     <p style="text-align:center;font-size:.825rem;color:var(--text-dim);margin-top:1rem">
-      輸入數字選帳號 → Enter。切換前會自動關掉正在運行的 Claude，避免它把舊帳號權杖寫回來。
+      数字を入力してアカウントを選び → Enter。切り替え前に実行中の Claude を自動で終了し、古いアカウントトークンが書き戻されるのを防ぎます。
     </p>
   </div>
 </section>
@@ -731,28 +731,28 @@
 <!-- Commands -->
 <section class="commands-section" id="commands">
   <div class="container">
-    <div class="section-label">完整指令列表</div>
-    <div class="section-title">所有 cl 指令</div>
+    <div class="section-label">完全なコマンド一覧</div>
+    <div class="section-title">すべての cl コマンド</div>
     <div style="overflow-x:auto">
     <table class="cmd-table">
       <thead>
-        <tr><th>指令</th><th>功能說明</th></tr>
+        <tr><th>コマンド</th><th>機能説明</th></tr>
       </thead>
       <tbody>
-        <tr><td><code>cl login &lt;名稱&gt;</code></td><td>開啟瀏覽器 OAuth 新增帳號，存成新 profile</td></tr>
-        <tr><td><code>cl import &lt;名稱&gt;</code></td><td>把目前 <code>~/.claude</code> 的登入狀態存成 profile</td></tr>
-        <tr><td><code>cl use &lt;名稱&gt;</code></td><td>切換 active 帳號（會先關掉正在跑的 claude）</td></tr>
-        <tr><td><code>cl switch</code></td><td>互動選單切換帳號，一樣會先關 claude</td></tr>
-        <tr><td><code>cl kill</code></td><td>立即關閉所有正在運行的 claude 程序</td></tr>
-        <tr><td><code>cl list</code></td><td>表格列出所有帳號：使用中標記、email（遮罩）、訂閱、快取用量</td></tr>
-        <tr><td><code>cl usage [name|--all]</code></td><td>全部帳號即時用量並排表（不帶參數=全部）；單一帳號顯示詳細分項</td></tr>
-        <tr><td><code>cl current</code></td><td>顯示目前使用中的 profile 名稱</td></tr>
-        <tr><td><code>cl remove &lt;名稱&gt;</code></td><td>刪除一個 profile</td></tr>
-        <tr><td><code>cl ps</code></td><td>列出偵測到的 claude 程序（排除本 session）</td></tr>
-        <tr><td><code>cl doctor</code></td><td>診斷：路徑、claude 程序狀態、profile 概覽</td></tr>
-        <tr><td><code>cl export &lt;檔名&gt;</code></td><td>備份所有 profile（Windows <code>.zip</code> / Linux <code>.tgz</code>）</td></tr>
-        <tr><td><code>cl restore &lt;檔名&gt;</code></td><td>從備份檔還原 profile</td></tr>
-        <tr><td><code>cl help</code></td><td>顯示內建指令說明</td></tr>
+        <tr><td><code>cl login &lt;名前&gt;</code></td><td>ブラウザ OAuth でアカウントを追加し、新しいプロファイルとして保存</td></tr>
+        <tr><td><code>cl import &lt;名前&gt;</code></td><td>現在の <code>~/.claude</code> のログイン状態をプロファイルとして保存</td></tr>
+        <tr><td><code>cl use &lt;名前&gt;</code></td><td>アクティブなアカウントを切り替え（先に実行中の claude を終了）</td></tr>
+        <tr><td><code>cl switch</code></td><td>対話式メニューでアカウントを切り替え、同様に先に claude を終了</td></tr>
+        <tr><td><code>cl kill</code></td><td>実行中のすべての claude プロセスを即座に終了</td></tr>
+        <tr><td><code>cl list</code></td><td>全アカウントを表で一覧: 使用中の印、email（マスク）、サブスク、キャッシュ済み使用量</td></tr>
+        <tr><td><code>cl usage [name|--all]</code></td><td>全アカウントのリアルタイム使用量の横並び表（引数なし=全部）; 単一アカウントは詳細な内訳を表示</td></tr>
+        <tr><td><code>cl current</code></td><td>現在使用中のプロファイル名を表示</td></tr>
+        <tr><td><code>cl remove &lt;名前&gt;</code></td><td>プロファイルを1つ削除</td></tr>
+        <tr><td><code>cl ps</code></td><td>検出された claude プロセスを一覧（本セッションを除く）</td></tr>
+        <tr><td><code>cl doctor</code></td><td>診断: パス、claude プロセスの状態、プロファイル概要</td></tr>
+        <tr><td><code>cl export &lt;ファイル名&gt;</code></td><td>すべてのプロファイルをバックアップ（Windows <code>.zip</code> / Linux <code>.tgz</code>）</td></tr>
+        <tr><td><code>cl restore &lt;ファイル名&gt;</code></td><td>バックアップファイルからプロファイルを復元</td></tr>
+        <tr><td><code>cl help</code></td><td>組み込みのコマンド説明を表示</td></tr>
       </tbody>
     </table>
     </div>
@@ -762,68 +762,68 @@
 <!-- FAQ -->
 <section class="faq-section" id="faq">
   <div class="container">
-    <div class="section-label">常見問題</div>
+    <div class="section-label">よくある質問</div>
     <div class="section-title">FAQ</div>
 
     <details id="faq-git">
-      <summary>沒有安裝 Git，要怎麼辦？</summary>
+      <summary>Git をインストールしていない場合はどうすればいい？</summary>
       <div class="faq-body">
-        <p><strong>Windows：</strong>在 PowerShell 輸入：</p>
+        <p><strong>Windows:</strong> PowerShell に次を入力します:</p>
         <div class="faq-pre">winget install --id Git.Git -e --source winget</div>
-        <p>安裝完後關掉 PowerShell 再重開，就有 git 了。</p>
-        <p style="margin-top:.75rem"><strong>Linux（Ubuntu/Debian）：</strong></p>
+        <p>インストール後、PowerShell を閉じて開き直せば git が使えます。</p>
+        <p style="margin-top:.75rem"><strong>Linux（Ubuntu/Debian）:</strong></p>
         <div class="faq-pre">sudo apt install git jq curl</div>
-        <p><strong>macOS：</strong>在終端機輸入 <code>git</code>，macOS 會提示安裝 Command Line Tools；<code>jq</code> 可用 <code>brew install jq</code>。</p>
+        <p><strong>macOS:</strong> ターミナルに <code>git</code> と入力すると、macOS が Command Line Tools のインストールを促します。<code>jq</code> は <code>brew install jq</code> で導入できます。</p>
       </div>
     </details>
 
     <details>
-      <summary>執行安裝指令時出現「執行原則」錯誤？</summary>
+      <summary>インストールコマンド実行時に「実行ポリシー」エラーが出る？</summary>
       <div class="faq-body">
-        <p>Windows 有時會封鎖 PowerShell 腳本。先執行這行解除限制，再重貼安裝指令：</p>
+        <p>Windows は PowerShell スクリプトをブロックすることがあります。まずこの一行を実行して制限を解除し、インストールコマンドを貼り直してください:</p>
         <div class="faq-pre">Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser</div>
       </div>
     </details>
 
     <details>
-      <summary>cl 指令在新開的 PowerShell 視窗裡不能用？</summary>
+      <summary>新しく開いた PowerShell ウィンドウで cl コマンドが使えない？</summary>
       <div class="faq-body">
-        <p>安裝會把設定加到你的 PowerShell profile，需要<strong>重新開啟</strong> PowerShell 才生效。安裝程式已同時接好 Windows PowerShell 5.1 與 PowerShell 7 兩個設定檔。</p>
-        <p>還是不行的話，確認 profile 裡有這行：</p>
+        <p>インストールは設定をあなたの PowerShell プロファイルに追加するため、有効にするには PowerShell を<strong>開き直す</strong>必要があります。インストーラーは Windows PowerShell 5.1 と PowerShell 7 の両方のプロファイルをすでに設定済みです。</p>
+        <p>それでも動かない場合は、プロファイルに次の行があるか確認します:</p>
         <div class="faq-pre">notepad $PROFILE</div>
-        <p>裡面應該有一行 <code>. "C:\Users\你的名字\claude-auth-switcher\shell\powershell.ps1"</code>。沒有的話手動加上去存檔，再重開 PowerShell。</p>
+        <p>中に <code>. "C:\Users\あなたの名前\claude-auth-switcher\shell\powershell.ps1"</code> という1行があるはずです。ない場合は手動で追記して保存し、PowerShell を開き直してください。</p>
       </div>
     </details>
 
     <details>
-      <summary>切換後 Claude 還是舊帳號 / 沒生效？</summary>
+      <summary>切り替えても Claude が古いアカウントのまま / 反映されない？</summary>
       <div class="faq-body">
-        <p>最常見原因是切換時還有 Claude 在跑——正在運行的 session 會在下一次呼叫 API 時把自己的舊權杖寫回去，蓋掉切換結果。</p>
-        <p><code>cl use</code> 和 <code>cl switch</code> 預設都會<strong>先關掉</strong>正在跑的 claude 再切換，所以照正常用法就不會踩到。若你手動加了 <code>--no-kill</code>，記得先自己關掉 Claude。</p>
+        <p>最も多い原因は、切り替え時にまだ Claude が実行中だったことです。実行中のセッションは次に API を呼び出すときに自分の古いトークンを書き戻し、切り替え結果を上書きしてしまいます。</p>
+        <p><code>cl use</code> と <code>cl switch</code> はデフォルトで実行中の claude を<strong>先に終了</strong>してから切り替えるため、通常の使い方では問題ありません。手動で <code>--no-kill</code> を付けた場合は、先に自分で Claude を終了してください。</p>
       </div>
     </details>
 
     <details>
-      <summary>切換後會不會掉訂閱、變成 API 計費？</summary>
+      <summary>切り替えるとサブスクが切れて API 課金になる？</summary>
       <div class="faq-body">
-        <p>不會。Claude 的帳號身分分散在兩個檔案：權杖在 <code>~/.claude/.credentials.json</code>，訂閱身分（<code>oauthAccount</code>）在 <code>~/.claude.json</code>。</p>
-        <p><code>cl</code> 切換時會<strong>同時換好這兩塊</strong>，所以 Claude Code 仍然走你的 Pro / Max 訂閱。如果某個 profile 是用舊版工具存的、缺少訂閱身分，重新 <code>cl import &lt;名稱&gt;</code> 一次即可補上。</p>
+        <p>なりません。Claude のアカウントの身元は2つのファイルに分かれています。トークンは <code>~/.claude/.credentials.json</code>、サブスクリプションの身元（<code>oauthAccount</code>）は <code>~/.claude.json</code> にあります。</p>
+        <p><code>cl</code> は切り替え時にこの<strong>2つを同時に入れ替える</strong>ため、Claude Code は引き続き Pro / Max サブスクで動作します。もしあるプロファイルが旧バージョンのツールで保存されていてサブスクリプションの身元が欠けている場合は、もう一度 <code>cl import &lt;名前&gt;</code> を実行すれば補えます。</p>
       </div>
     </details>
 
     <details>
-      <summary>用量百分比是「已用」還是「剩餘」？</summary>
+      <summary>使用量のパーセンテージは「使用済み」と「残量」のどちら？</summary>
       <div class="faq-body">
-        <p>顯示的是<strong>已用量</strong>。例如 <code>5h 42% used</code> 代表這個 5 小時視窗已經用掉 42%。單一帳號的 <code>cl usage &lt;名稱&gt;</code> 會再列出每週、週-opus、週-sonnet 分項與重置時間。</p>
-        <p>（這點和姊妹專案 codex-auth-switcher 相反——Codex 顯示的是剩餘量。）</p>
+        <p>表示されるのは<strong>使用済み量</strong>です。たとえば <code>5h 42% used</code> は、この5時間ウィンドウですでに 42% を使ったという意味です。単一アカウントの <code>cl usage &lt;名前&gt;</code> では、週・週-opus・週-sonnet の内訳とリセット時刻もさらに表示されます。</p>
+        <p>（この点は姉妹プロジェクト codex-auth-switcher とは逆です。Codex は残量を表示します。）</p>
       </div>
     </details>
 
     <details>
-      <summary>權杖安全嗎？會上傳到雲端嗎？</summary>
+      <summary>トークンは安全？クラウドにアップロードされる？</summary>
       <div class="faq-body">
-        <p>不會。所有權杖只存在你自己電腦的 <code>~/.claude_auth_profiles/</code> 資料夾裡，工具完全在本機運行。Unix 上 profile 目錄會設成 <code>700</code>、檔案 <code>600</code>。</p>
-        <p>請勿把 <code>~/.claude_auth_profiles/</code> 或 <code>cl export</code> 出來的備份檔 commit 到 Git；備份檔含長期權杖，傳完請刪除。</p>
+        <p>されません。すべてのトークンはあなた自身の PC の <code>~/.claude_auth_profiles/</code> フォルダーにのみ保存され、ツールは完全にローカルで動作します。Unix ではプロファイルディレクトリが <code>700</code>、ファイルが <code>600</code> に設定されます。</p>
+        <p><code>~/.claude_auth_profiles/</code> や <code>cl export</code> で出力したバックアップファイルを Git に commit しないでください。バックアップファイルには長期間有効なトークンが含まれるため、転送後は削除してください。</p>
       </div>
     </details>
 
@@ -835,10 +835,10 @@
   <p>
     <a href="https://github.com/yazelin/claude-auth-switcher" target="_blank">github.com/yazelin/claude-auth-switcher</a>
     &nbsp;·&nbsp; MIT License &nbsp;·&nbsp;
-    姊妹專案 <a href="https://github.com/yazelin/codex-auth-switcher" target="_blank">codex-auth-switcher</a>
+    姉妹プロジェクト <a href="https://github.com/yazelin/codex-auth-switcher" target="_blank">codex-auth-switcher</a>
   </p>
   <p style="margin-top:.5rem;font-size:.75rem">
-    有 bug 或建議？請到 GitHub 開 <a href="https://github.com/yazelin/claude-auth-switcher/issues" target="_blank">Issue</a>
+    バグや要望がありますか？ GitHub で <a href="https://github.com/yazelin/claude-auth-switcher/issues" target="_blank">Issue</a> を作成してください
   </p>
 </footer>
 
@@ -864,17 +864,17 @@
 
   function copyInstall(os, btn) {
     navigator.clipboard.writeText(installCmds[os]).then(function() {
-      btn.textContent = '已複製';
+      btn.textContent = 'コピー済み';
       btn.classList.add('copied');
-      setTimeout(function() { btn.textContent = '複製'; btn.classList.remove('copied'); }, 2000);
+      setTimeout(function() { btn.textContent = 'コピー'; btn.classList.remove('copied'); }, 2000);
     });
   }
 
   function copyCode(btn, text) {
     navigator.clipboard.writeText(text).then(function() {
-      btn.textContent = '已複製';
+      btn.textContent = 'コピー済み';
       btn.classList.add('copied');
-      setTimeout(function() { btn.textContent = '複製'; btn.classList.remove('copied'); }, 2000);
+      setTimeout(function() { btn.textContent = 'コピー'; btn.classList.remove('copied'); }, 2000);
     });
   }
 
