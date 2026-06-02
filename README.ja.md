@@ -152,6 +152,32 @@ weekly-sonnet    27% used   reset 06/02 09:00
 
 設計の詳細は `docs/superpowers/specs/2026-05-29-claude-auth-switcher-design.md` を参照してください。
 
+## アンインストール
+
+シェル連携（`cl` コマンド）を削除します。保存済みアカウントはデフォルトで残します。
+
+**Linux / macOS**
+
+```bash
+bash ~/claude-auth-switcher/uninstall.sh
+# 保存済みアカウントも削除する場合:
+bash ~/claude-auth-switcher/uninstall.sh --purge
+```
+
+**Windows PowerShell**
+
+```powershell
+& "$HOME\claude-auth-switcher\uninstall.ps1"
+# 保存済みアカウントも削除する場合:
+& "$HOME\claude-auth-switcher\uninstall.ps1" -Purge
+```
+
+アンインストーラはシェルプロファイルから `# claude-auth-switcher` ブロックと
+`source` 行を削除し（変更前に `.cl-bak` バックアップを作成）、repo 本体と
+`~/.claude_auth_profiles` 内の保存済みアカウントは**残します**。完了時に repo を
+手動削除するコマンドを表示します。`--purge` / `-Purge` を付けると保存済み
+アカウントも削除します。
+
 ## ライセンス
 
 MIT — [LICENSE](LICENSE) を参照してください。

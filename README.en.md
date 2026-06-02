@@ -178,6 +178,32 @@ whichever host you launch.
 See `docs/superpowers/specs/2026-05-29-claude-auth-switcher-design.md` for design
 details.
 
+## Uninstall
+
+Removes the shell wiring (the `cl` command). Your saved accounts are kept by default.
+
+**Linux / macOS**
+
+```bash
+bash ~/claude-auth-switcher/uninstall.sh
+# also delete saved accounts:
+bash ~/claude-auth-switcher/uninstall.sh --purge
+```
+
+**Windows PowerShell**
+
+```powershell
+& "$HOME\claude-auth-switcher\uninstall.ps1"
+# also delete saved accounts:
+& "$HOME\claude-auth-switcher\uninstall.ps1" -Purge
+```
+
+The uninstaller strips the `# claude-auth-switcher` block and its `source` line
+from your shell profile (a `.cl-bak` backup is written first), but **keeps** the
+repo itself and the saved accounts in `~/.claude_auth_profiles`. It prints the
+command to delete the repo manually when it finishes; pass `--purge` / `-Purge`
+to also delete saved accounts.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
