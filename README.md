@@ -157,6 +157,31 @@ Windows PowerShell 5.1 驗證 — `cl import` / `cl use` / `cl switch` 全部正
 
 設計細節請見 `docs/superpowers/specs/2026-05-29-claude-auth-switcher-design.md`。
 
+## 解除安裝
+
+移除 shell 接線（`cl` 指令）。已存的帳號預設保留。
+
+**Linux / macOS**
+
+```bash
+bash ~/claude-auth-switcher/uninstall.sh
+# 連同已存帳號一起刪除：
+bash ~/claude-auth-switcher/uninstall.sh --purge
+```
+
+**Windows PowerShell**
+
+```powershell
+& "$HOME\claude-auth-switcher\uninstall.ps1"
+# 連同已存帳號一起刪除：
+& "$HOME\claude-auth-switcher\uninstall.ps1" -Purge
+```
+
+uninstall 會把 `# claude-auth-switcher` 與對應的 `source` 那行從你的 shell
+profile 移除（改動前留 `.cl-bak` 備份），但**保留** repo 本身與
+`~/.claude_auth_profiles` 裡已存的帳號。執行完會印出手動刪除 repo 的指令；
+加 `--purge` / `-Purge` 則一併刪除已存帳號。
+
 ## 授權
 
 MIT — 見 [LICENSE](LICENSE)。
