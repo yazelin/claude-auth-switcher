@@ -330,6 +330,38 @@ function Cmd-Import([string]$name) {
   "imported '$name'"
 }
 
+function Account-Key($acctObj) {
+  # Stable "accountUuid|organizationUuid" — survives token rotation, unlike the
+  # refresh token, so we can tell whether the live credential still belongs to a
+  # given profile's account.
+  if ($null -eq $acctObj) { return '' }
+  $u = if ($acctObj.accountUuid) { [string]$acctObj.accountUuid } else { '' }
+  $o = if ($acctObj.organizationUuid) { [string]$acctObj.organizationUuid } else { '' }
+  "$u|$o"
+}
+
+function Save-ActiveToProfile {
+  # Fold the live credential into the CURRENT profile when it belongs to the same
+  # account (matched by Account-Key, not the rotating refresh token), so a token
+  # a live Claude session rotated isn't lost and no stale copy is left behind.
+  # No-ops unless the live account identity matches the current profile's saved
+  # identity, so it can never clobber a profile holding a different account.
+  $cur = Get-Current
+  if (-not $cur -or $cur -eq 'none') { return }
+  $curPf = Profile-Path $cur
+  $curAp = Account-Path $cur
+  if (-not (Test-Path $curPf) -or -not (Test-Path $curAp) -or -not (Test-Path $CL_CRED)) { return }
+  $liveBlock = Read-Account
+  if (-not $liveBlock) { return }
+  $liveKey  = Account-Key ($liveBlock | ConvertFrom-Json)
+  $savedKey = Account-Key (Get-Content $curAp -Raw | ConvertFrom-Json)
+  if (-not $liveKey -or $liveKey -eq '|' -or $liveKey -ne $savedKey) { return }
+  $cred = Read-Cred
+  $oauth = $cred.claudeAiOauth
+  if ($null -eq $oauth) { return }
+  Write-JsonNoBom $curPf $oauth
+}
+
 function Cmd-Use([string[]]$argv) {
   $name = $null; $force = $false; $noKill = ($env:CL_NO_KILL -eq '1')
   foreach ($a in $argv) {
@@ -343,6 +375,17 @@ function Cmd-Use([string[]]$argv) {
   if (-not $name) { Die 'usage: cl use <name> [--force] [--no-kill]' }
   $pf = Profile-Path $name
   if (-not (Test-Path $pf)) { Die "no such profile: $name" }
+  # Kill live claude.exe first - otherwise a running session writes its cached
+  # credentials back over the switch on its next API call (or rotates the token
+  # mid-save). (--no-kill / CL_NO_KILL=1 to skip.)
+  if (-not $noKill) {
+    $killed = Kill-ActiveClaude
+    if ($killed -gt 0) { "killed $killed running claude process(es) before switching" }
+  }
+  # Save-back: fold a token a live session rotated back into the current profile
+  # before switching away. Runs before the guard so a freshly-rotated current
+  # account still registers as saved (closes the --force token-loss gap).
+  Save-ActiveToProfile
   if (Test-Path $CL_CRED) {
     $cred = Read-Cred
     $curRt = $cred.claudeAiOauth.refreshToken
@@ -352,12 +395,6 @@ function Cmd-Use([string[]]$argv) {
     }
   } else {
     $cred = [PSCustomObject]@{}
-  }
-  # Kill live claude.exe first - otherwise a running session writes its cached
-  # credentials back over the switch on its next API call. (--no-kill / CL_NO_KILL=1 to skip.)
-  if (-not $noKill) {
-    $killed = Kill-ActiveClaude
-    if ($killed -gt 0) { "killed $killed running claude process(es) before switching" }
   }
   $oauth = Get-Content $pf -Raw | ConvertFrom-Json
   if (Token-Expired $oauth) {

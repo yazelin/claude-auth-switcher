@@ -83,6 +83,38 @@ cmd_import() { # name
 cl_lock()   { mkdir "$CL_PROFILES_DIR/.lock" 2>/dev/null || die "another cl operation is in progress (stale lock? rm -rf $CL_PROFILES_DIR/.lock)"; }
 cl_unlock() { rmdir "$CL_PROFILES_DIR/.lock" 2>/dev/null || true; }
 
+# Stable identity key for an oauthAccount JSON: "accountUuid|organizationUuid".
+# Survives token rotation (unlike refreshToken), so we can tell whether the live
+# credential still belongs to a given profile's account.
+cl_account_key() { # oauth_account_json
+  printf '%s' "$1" | jq -r '((.accountUuid // "") + "|" + (.organizationUuid // ""))' 2>/dev/null || true
+}
+
+# Before switching, fold the live credential back into the CURRENT profile when
+# it belongs to the same account (matched by cl_account_key, NOT the rotating
+# refresh token). A live Claude session may have rotated the current account's
+# token in CL_CRED since the last switch; saving it back keeps the profile
+# current and leaves no stale copy — this closes the gap where switching
+# (especially with --force) silently drops a freshly-rotated token. No-ops unless
+# the live account identity matches the current profile's saved identity, so it
+# can never clobber a profile with a different account.
+cl_save_active_to_profile() {
+  local cur cur_pf cur_apf live_acct live_key saved_key oauth
+  cur="$(cat "$CL_PROFILES_DIR/current" 2>/dev/null || true)"
+  [ -n "$cur" ] || return 0
+  cur_pf="$CL_PROFILES_DIR/$cur.json"
+  cur_apf="$CL_PROFILES_DIR/$cur.account.json"
+  [ -f "$cur_pf" ] && [ -f "$cur_apf" ] && [ -f "$CL_CRED" ] || return 0
+  live_acct="$(cl_read_account "$CL_ACCOUNT")"
+  [ -n "$live_acct" ] && [ "$live_acct" != "null" ] || return 0
+  live_key="$(cl_account_key "$live_acct")"
+  saved_key="$(cl_account_key "$(cat "$cur_apf")")"
+  [ -n "$live_key" ] && [ "$live_key" != "|" ] && [ "$live_key" = "$saved_key" ] || return 0
+  oauth="$(cl_read_oauth "$CL_CRED")"
+  [ -n "$oauth" ] && [ "$oauth" != "null" ] || return 0
+  umask 077; printf '%s\n' "$oauth" | jq . > "$cur_pf"
+}
+
 cmd_use() { # name [--force|-y] [--no-kill]
   local name="" force=0 no_kill="${CL_NO_KILL:-0}" a
   for a in "$@"; do
@@ -98,19 +130,26 @@ cmd_use() { # name [--force|-y] [--no-kill]
   [ -f "$pf" ] || die "no such profile: $name"
   [ -f "$CL_CRED" ] || die "no credentials at $CL_CRED — log in with Claude Code first"
 
+  # Kill live claude first — otherwise a running session writes its cached
+  # credentials back over the switch on its next API call (or rotates the token
+  # mid-save). (--no-kill / CL_NO_KILL=1 to skip.)
+  if [ "$no_kill" != "1" ]; then
+    local killed; killed="$(cl_kill_claude)"
+    [ "$killed" -gt 0 ] && echo "killed $killed running claude process(es) before switching"
+  fi
+
+  # Save-back: if the live credential still belongs to the current profile's
+  # account, fold it (possibly a just-rotated token) back into that profile
+  # before switching away. Runs before the guard so a freshly-rotated current
+  # account still registers as saved (closes the --force token-loss gap).
+  cl_save_active_to_profile
+
   # Guard: refuse to clobber an unsaved current account.
   local cur_rt owner
   cur_rt="$(cl_read_oauth "$CL_CRED" | jq -r '.refreshToken // empty')"
   owner="$(cl_find_profile_by_refresh "$CL_PROFILES_DIR" "$cur_rt")"
   if [ -z "$owner" ] && [ "$force" -ne 1 ]; then
     die "current account is not saved as a profile — 'cl import <name>' first, or pass --force to overwrite"
-  fi
-
-  # Kill live claude first — otherwise a running session writes its cached
-  # credentials back over the switch on its next API call. (--no-kill / CL_NO_KILL=1 to skip.)
-  if [ "$no_kill" != "1" ]; then
-    local killed; killed="$(cl_kill_claude)"
-    [ "$killed" -gt 0 ] && echo "killed $killed running claude process(es) before switching"
   fi
 
   cl_lock; trap cl_unlock EXIT
